@@ -12,7 +12,9 @@ Functions:
     init_node(elm e) -> node *
     make_test_node(int k) -> node * 
     append_stack(stack *s, node * n) -> void
+    pop_stack(stack *s) -> stack *s
     print_stack(stack *s) -> void
+    
 
 Structs from structures.h
     elm(int)
@@ -65,15 +67,15 @@ void append_stack(stack *s, node * n){
 
 node * pop_stack(stack *s){
     node * temp;
-    // if empty set ok to false indicating false
+    // if empty set ok to false indicating stack is empty
     if (s->num == 0){ 
         temp = (node *) malloc(sizeof(node));
         temp->ok = false;
         return temp;
     } 
 
+    // if stack is not empty
     temp = s->last;
-
     s->last = (node *)temp->next;
     s->num -= 1;
 
@@ -90,16 +92,16 @@ void print_stack(stack *s){
     }
 }
 
-int main(){
-    node* l[5];
-    stack s = init_stack();
-    for (int i=0;i<5;i++){
-        node * n = make_test_node(i);
-        l[i] = n;
-        append_stack(&s, n);
-    }
-    pop_stack(&s);
+// int main(){
+//     node* l[5];
+//     stack s = init_stack();
+//     for (int i=0;i<5;i++){
+//         node * n = make_test_node(i);
+//         l[i] = n;
+//         append_stack(&s, n);
+//     }
+//     pop_stack(&s);
 
-    print_stack(&s);
+//     print_stack(&s);
     
-}
+// }
