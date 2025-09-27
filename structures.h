@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 typedef struct{
     int data;
 } elm;
@@ -5,6 +7,7 @@ typedef struct{
 typedef struct{
     elm content;
     struct node * next;
+    bool ok;
 } node;
 
 typedef struct{
