@@ -67,11 +67,9 @@ void append_stack(stack *s, node * n){
 
 node * pop_stack(stack *s){
     node * temp;
-    // if empty set ok to false indicating stack is empty
-    if (s->num == 0){ 
-        temp = (node *) malloc(sizeof(node));
-        temp->ok = false;
-        return temp;
+    // if empty
+    if (s->num == 0){  
+        return NULL;
     } 
 
     // if stack is not empty

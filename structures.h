@@ -7,7 +7,6 @@ typedef struct{
 typedef struct{
     elm content;
     struct node * next;
-    bool ok;
 } node;
 
 typedef struct{
