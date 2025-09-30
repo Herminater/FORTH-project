@@ -37,7 +37,7 @@ int main(){
         */
 
         // for (int i=0; i<MAX_INPUT_LENGTH; i++){
-        //     if (isdigit(input[i])){
+            // if (isdigit(input[i])){
 
         //     }
         // }
