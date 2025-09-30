@@ -1,15 +1,23 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 int stackEnd = -1;
 int stack[50];
 
-int pop(void){
-    int holder = stack[stackEnd];
+int* pop(void){
+    if (stackEnd == -1){
+        return NULL;
+    }
+    int* holder = &stack[stackEnd];
     stackEnd--;
     return holder;
 }
 
 void push(int val){
+    if (stackEnd == 49){
+        return;
+    }
     stackEnd++;
     stack[stackEnd] = val;
 }
@@ -19,14 +27,102 @@ void printStack(void){
     for (int i = 0; i <= stackEnd; i++){
         printf("%d ", stack[i]);
     }
+    printf("\n");
+}
+
+void mult(){
+    if (stackEnd > 0){
+        int a = *pop();
+        int b = *pop();
+        push(a * b);
+    }
+}
+
+void add(){
+    if (stackEnd > 0){
+        int a = *pop();
+        int b = *pop();
+        push(a + b);
+    }
+}
+
+void sub(){
+    if (stackEnd > 0){
+        int a = *pop();
+        int b = *pop();
+        push(a - b);
+    }
+}
+
+void div(){
+    if (stackEnd > 0){
+        int a = *pop();
+        int b = *pop();
+        push(b / a);
+    }
+}
+
+void mod(){
+    if (stackEnd > 0){
+        int a = *pop();
+        int b = *pop();
+        push(b % a);
+    }
 }
 
 int main(void){
 
-    push(31);
-    push(35);
+    bool flag = true;
+    char c;
 
-    printStack();
+    while (flag){
+        //scanf("%c ", &c);
+        c = getchar();
+        if (c == '\n'){
+            continue;
+        }
+
+        //printf("%d", isdigit(c));
+        if (c == 'q'){
+            flag = false;
+            return 0;
+        }
+
+        if (isdigit(c) != 0){
+            push((int) (c-'0'));
+        }
+        else{
+            //printf("Not Digit\n");
+            switch (c){
+                case '*':
+                    //printf("Here");
+                    mult();
+                    break;
+                
+                case '+':
+                    add();
+                    break;
+
+                case '-':
+                    sub();
+                    break;
+                
+                case '/':
+                    div();
+                    break;
+                
+                case '%':
+                    mod();
+                    break;
+                
+                default:
+                    printf("Not recognised\n");
+            }
+
+        }
+        printStack();
+    }
+
 
     return 1;
 }
