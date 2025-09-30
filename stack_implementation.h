@@ -40,7 +40,7 @@ elm init_elm(int k){
 node * init_node(elm e){
     node *n = (node *) malloc(sizeof(node)); // se source i toppen for dokumentation of forklaring
     n->content = e;
-    n->ok = true;
+
     return n;
 }
 
