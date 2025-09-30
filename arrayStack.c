@@ -70,57 +70,73 @@ void mod(){
     }
 }
 
+void passString(char c[]){
+    int left = 0;
+    for (int right = 0; right<50; right++){
+        if (c[right] = ' '){
+            // tjek bagerste ting og bestem type ud fra det
+            // ...
+
+
+
+
+        }
+    }
+
+
+}
+
 int main(void){
 
     bool flag = true;
-    char c;
+    char c[100];
+    int maxSize = 50;
 
     while (flag){
         //scanf("%c ", &c);
-        c = getchar();
-        if (c == '\n'){
-            continue;
-        }
+        fgets(c, maxSize, stdin);
 
-        //printf("%d", isdigit(c));
-        if (c == 'q'){
-            flag = false;
-            return 0;
-        }
+        passString(c);
 
-        if (isdigit(c) != 0){
-            push((int) (c-'0'));
-        }
-        else{
-            //printf("Not Digit\n");
-            switch (c){
-                case '*':
-                    //printf("Here");
-                    mult();
-                    break;
-                
-                case '+':
-                    add();
-                    break;
+    //     //printf("%d", isdigit(c));
+    //     if (c == 'q'){
+    //         flag = false;
+    //         return 0;
+    //     }
 
-                case '-':
-                    sub();
-                    break;
+    //     if (isdigit(c) != 0){
+    //         push((int) (c-'0'));
+    //     }
+    //     else{
+    //         //printf("Not Digit\n");
+    //         switch (c){
+    //             case '*':
+    //                 //printf("Here");
+    //                 mult();
+    //                 break;
                 
-                case '/':
-                    div();
-                    break;
-                
-                case '%':
-                    mod();
-                    break;
-                
-                default:
-                    printf("Not recognised\n");
-            }
+    //             case '+':
+    //                 add();
+    //                 break;
 
-        }
-        printStack();
+    //             case '-':
+    //                 sub();
+    //                 break;
+                
+    //             case '/':
+    //                 div();
+    //                 break;
+                
+    //             case '%':
+    //                 mod();
+    //                 break;
+                
+    //             default:
+    //                 printf("Not recognised\n");
+    //         }
+
+    //     }
+    //     printStack();
     }
 
 
