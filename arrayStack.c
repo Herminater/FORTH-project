@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <ctype.h>
-
+#include <math.h>
+#include <string.h>
 int stackEnd = -1;
 int stack[50];
 
@@ -70,18 +71,31 @@ void mod(){
     }
 }
 
+// deler strengen op i dele og pusher digits og kører funktioner
 void passString(char c[]){
     int left = 0;
-    for (int right = 0; right<50; right++){
-        if (c[right] = ' '){
-            // tjek bagerste ting og bestem type ud fra det
-            // ...
+    int curr = 0;
+    char curr_str[50];
+    for (int right = 0; right<strlen(c)-1; right++){ // kør så længe der er char i strengen
 
+        printf("Char is %c \n", c[right]);
 
-
-
+        if (c[right] == ' '){ // hvis et mellemrum findes
+            if (isdigit(c[left]) != 0){ // og det er et digit
+                for(int i=0; i<right-left; i++){ // kør fra left til right og læg dem til med den rigtige potens
+                    curr += (int)(c[left+i]-'0') * pow(10, right-left-1-i); // lægger tallet på left til ganget med en potens af 10
+                }
+                push(curr);
+                curr = 0; // reset curr til næste gang et digit findes
+            }
+            else{
+                strncpy(curr_str, c+left, right-left);
+            }
+            left = right+1; // sæt left til starten af næste del af strengen
         }
+        
     }
+    printStack();
 
 
 }
@@ -95,7 +109,6 @@ int main(void){
     while (flag){
         //scanf("%c ", &c);
         fgets(c, maxSize, stdin);
-
         passString(c);
 
     //     //printf("%d", isdigit(c));
