@@ -89,7 +89,12 @@ void passString(char c[]){
                 curr = 0; // reset curr til næste gang et digit findes
             }
             else{
-                strncpy(curr_str, c+left, right-left);
+                strncpy(curr_str, c+left, right-left); // pas på med den her igen:) - overvej loop
+                bool (*function)();
+
+                void (*fptr)();
+                fptr = &mult;
+                fptr();
             }
             left = right+1; // sæt left til starten af næste del af strengen
         }

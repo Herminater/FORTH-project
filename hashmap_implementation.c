@@ -21,7 +21,7 @@ Structures:
 typedef struct bucket{
     int hash;
     char key[KEY_MAX_LENGTH];
-    int value;
+    void (*fptr)();
     struct bucket * next;
 } bucket;
 
@@ -38,11 +38,11 @@ int generate_hash(char key[]){
 }
 
 // creates a new bucket for the hashmap
-bucket * init_bucket(int hsh, char k[], int value){ 
+bucket * init_bucket(int hsh, char k[], void (*value)()){ 
     bucket *bu = (bucket *) malloc(sizeof(bucket));
     bu->hash = hsh;
     strcpy(bu->key, k); // dette kan blive et problem med allokering af plads og overflow
-    bu->value = value;
+    bu->fptr = value;
     bu->next = NULL;
     return bu;
 }
@@ -58,13 +58,13 @@ hashMap init_hashMap(){
 }
 
 // inserts key,value pair into hashmap
-void put(hashMap *map, char key[], int val){
+void put(hashMap *map, char key[], void (*value)()){
     int hash = generate_hash(key);
 
     // check for colisions
     // if no collisions:
     if (map->b[hash] == NULL){
-        map->b[hash] = init_bucket(hash, key, val);
+        map->b[hash] = init_bucket(hash, key, value);
         
     }
     // if colission
@@ -73,12 +73,12 @@ void put(hashMap *map, char key[], int val){
         do{ 
             // if value allready present:
             if (strcmp(key, curr->key) == 0){ 
-                curr->value = val;
+                curr->fptr = value;
                 return;
             }
             // if hash is same but value is different
             if (curr->next == NULL){
-                curr->next = init_bucket(hash,key,val);
+                curr->next = init_bucket(hash,key,value);
                 return;
             }
             curr = curr->next;
@@ -88,18 +88,18 @@ void put(hashMap *map, char key[], int val){
 }
 
 // fetches value with key
-int get(hashMap *map, char key[]){
+void (*get(hashMap *map, char key[])){ // retunerer en pointer til en function
     int hash = generate_hash(key);
     struct bucket * curr = map->b[hash];
 
     if (curr == NULL){ // if nothing on index
-        return -11111;
+        return NULL;
     }
     // if something on index
     do{ 
         // if match
         if (strcmp(key, curr->key) == 0){
-            return curr->value;
+            return curr->fptr;
         }
         curr = curr->next;
 
@@ -107,26 +107,28 @@ int get(hashMap *map, char key[]){
     while(curr != NULL);
 
     // if something on index but no match
-    return -11111;   
+    return NULL;
+}
+
+void add(int a, int b, int*x){
+    *x = a+b;
 }
 
 int main(){
     hashMap map = init_hashMap();
-    int hash = generate_hash("test");
-    bucket new_b = *init_bucket(hash, "test", 1);
-
-    put(&map, "test", 1);
-    put(&map, "temp", 2);
-    put(&map, "telt", 3);
-    put(&map, "test", 3);
+    put(&map, "test", &add);
+    put(&map, "temp", &add);
+    put(&map, "telt", &add);
+    put(&map, "test", &add);
 
 
-    int val = get(&map, "test");
-    int val2 = get(&map, "temp");
-    int val3 = get(&map, "telt");
+    void (*val1)(int, int, int*) = get(&map, "test");
 
-    printf("test er %d\n", val);
-    printf("temp er %d\n", val2);
-    printf("telt er %d\n", val3);
+    int a = 3;
+    int b = 2;
+    int x;
+    val1(a,b, &x);
+    printf("%d", x);
+    return 0;
 
 }
