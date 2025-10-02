@@ -3,10 +3,11 @@
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
-
+#include "hashmap_implementation.h"
 
 int stackEnd = -1;
 int stck[50];
+hashMap map;
 
 int* pop(void){
     if (stackEnd == -1){
@@ -92,10 +93,8 @@ void passString(char c[]){
             }
             else{
                 strncpy(curr_str, c+left, right-left); // pas på med den her igen:) - overvej loop
-                bool (*function)();
-
                 void (*fptr)();
-                fptr = &mult;
+                fptr = get(&map, curr_str);
                 fptr();
             }
             left = right+1; // sæt left til starten af næste del af strengen
@@ -107,99 +106,26 @@ void passString(char c[]){
 
 }
 
-int main(void){ 
+int main(void){
+    // hashmap:
+    map = init_hashMap();
+    put(&map, "*", &mult);
+    put(&map, "/", &divid);
+    put(&map, "+", &add);
+    put(&map, "-", &sub);
+    put(&map, "%", &mod);
+
+
+
     bool flag = true;
     char c[100];
     int maxSize = 50;
 
     while (flag){
-        //scanf("%c ", &c);
-
         fgets(c, maxSize, stdin);
         passString(c);
-        
-
-    //     //printf("%d", isdigit(c));
-    //     if (c == 'q'){
-    //         flag = false;
-    //         return 0;
-    //     }
-
-    //     if (isdigit(c) != 0){
-    //         push((int) (c-'0'));
-    //     }
-    //     else{
-    //         //printf("Not Digit\n");
-    //         switch (c){
-    //             case '*':
-    //                 //printf("Here");
-    //                 mult();
-    //                 break;
-                
-    //             case '+':
-    //                 add();
-    //                 break;
-
-    //             case '-':
-    //                 sub();
-    //                 break;
-                
-    //             case '/':
-    //                 div();
-    //                 break;
-                
-    //             case '%':
-    //                 mod();
-    //                 break;
-                
-    //             default:
-    //                 printf("Not recognised\n");
-    //         }
-
-    //     }
-    //     printStack();
-
     }
 
 
     return 1;
 }
-
-
-
-
-/*typedef struct stack{
-    char s[50][1];
-    int pointer;
-} stack;
-
-stack intialize(){
-    stack s;
-    s.pointer = 0;
-    //char st[50];
-    //s.s = st;
-}
-
-char pop(stack *s){
-    char StackEnd = s->s[s->pointer];
-    s->pointer--;
-    return StackEnd;
-}
-
-void push(stack *s, char c){
-    s->pointer++;
-    s->s[s->pointer] = c;
-}
-
-void printStack(stack *s){
-    for (int i = 0; i <= s->pointer; i++){
-        printf("%c ", &s->s[s->pointer]);
-    }
-}
-
-int main(void){
-    stack s = intialize();
-    push(&s, '3');
-    printStack(&s);
-}
-*/

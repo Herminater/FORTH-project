@@ -110,25 +110,22 @@ void (*get(hashMap *map, char key[])){ // retunerer en pointer til en function
     return NULL;
 }
 
-void add(int a, int b, int*x){
-    *x = a+b;
-}
 
-int main(){
-    hashMap map = init_hashMap();
-    put(&map, "test", &add);
-    put(&map, "temp", &add);
-    put(&map, "telt", &add);
-    put(&map, "test", &add);
+// int main(){
+//     hashMap map = init_hashMap();
+//     put(&map, "test", &add);
+//     put(&map, "temp", &add);
+//     put(&map, "telt", &add);
+//     put(&map, "test", &add);
 
 
-    void (*val1)(int, int, int*) = get(&map, "test");
+//     void (*val1)(int, int, int*) = get(&map, "test");
 
-    int a = 3;
-    int b = 2;
-    int x;
-    val1(a,b, &x);
-    printf("%d", x);
-    return 0;
+//     int a = 3;
+//     int b = 2;
+//     int x;
+//     val1(a,b, &x);
+//     printf("%d", x);
+//     return 0;
 
-}
+// }
