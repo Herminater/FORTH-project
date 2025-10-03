@@ -4,10 +4,16 @@
 #include <math.h>
 #include <string.h>
 #include "hashmap_implementation.h"
+#include "hashmap_implementation_string.h"
 
 int stackEnd = -1;
 int stck[50];
 hashMap map;
+hashMapString string_map;
+
+
+int left;
+int right;
 
 int* pop(void){
     if (stackEnd == -1){
@@ -181,16 +187,16 @@ void rotate(){
         push(c);
         push(a);
     }
-}
-
-
+};
+void define(char c[], int* right, int* left);
+void passString(char c[]);
 
 // deler strengen op i dele og pusher digits og kører funktioner
 void passString(char c[]){
-    int left = 0;
+    left = 0;
     int curr = 0;
     char curr_str[50];
-    for (int right = 0; right<strlen(c)-1; right++){ // kør så længe der er char i strengen
+    for (right = 0; right<strlen(c)-1; right++){ // kør så længe der er char i strengen
 
         // printf("Char is %c \n", c[right]);
 
@@ -206,7 +212,15 @@ void passString(char c[]){
                 strncpy(curr_str, c+left, right-left); // pas på med den her igen:) - overvej loop
                 void (*fptr)();
                 fptr = get(&map, curr_str);
-                fptr();
+
+                if (fptr == &define){
+                    fptr(&c, &right, &left); // we need to define a function and update indexes after
+                }
+
+                else{
+                    fptr();
+                }
+
             }
             left = right+1; // sæt left til starten af næste del af strengen
         }
@@ -217,6 +231,38 @@ void passString(char c[]){
 
 
 }
+
+
+
+void define(char c[], int* right, int* left){
+    char key[50];
+    char funktion[50];
+    int curr_left = *right;
+    // find første mellemrum
+    int i = 0;
+    for (; i<strlen(c)-1; i++){
+        if (c[curr_left+i] == ' '){
+            strncpy(key, c+curr_left, i);
+        }
+    }
+    // find semikolon
+    int new_idx = curr_left +i ;
+    for (; i<strlen(c); i++){
+        if (c[curr_left+i] == ';'){
+            strncpy(funktion, c+new_idx, curr_left+i-new_idx);
+        }
+    }
+
+    put_string(&string_map, key, funktion);
+    put(&map, key, &passString);
+    
+    *right = curr_left+i;
+    *left = *right;
+    // 
+
+}   
+
+
 
 int main(void){
     // hashmap:
@@ -240,6 +286,10 @@ int main(void){
     put(&map, "SWAP", &swap);
     put(&map, "OVER", &over);
     put(&map, "ROTATE", &rotate);
+    put(&map, ":", &define);
+
+
+
 
     bool flag = true;
     char c[100];
