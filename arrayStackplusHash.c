@@ -23,7 +23,6 @@ int* pop(void){
     stackEnd--;
     return holder;
 }
-
 void push(int val){
     if (stackEnd == 49){
         return;
@@ -31,7 +30,6 @@ void push(int val){
     stackEnd++;
     stck[stackEnd] = val;
 }
-
 void printStack(void){
     //printf("%d %d ", stack[0], stackEnd);
     for (int i = 0; i <= stackEnd; i++){
@@ -39,7 +37,6 @@ void printStack(void){
     }
     printf("\n");
 }
-
 void mult(){
     if (stackEnd > 0){
         int a = *pop();
@@ -47,7 +44,6 @@ void mult(){
         push(a * b);
     };
 }
-
 void add(){
     if (stackEnd > 0){
         int a = *pop();
@@ -55,7 +51,6 @@ void add(){
         push(a + b);
     };
 }
-
 void sub(){
     if (stackEnd > 0){
         int a = *pop();
@@ -63,7 +58,6 @@ void sub(){
         push(b - a);
     };
 }
-
 void divid(){
     if (stackEnd > 0){
         int a = *pop();
@@ -71,7 +65,6 @@ void divid(){
         push(b / a);
     };
 }
-
 void mod(){
     if (stackEnd > 0){
         int a = *pop();
@@ -79,7 +72,6 @@ void mod(){
         push(b % a);
     };
 }
-
 void equals(){ // =
     if (stackEnd > 0){
         int a = *pop();
@@ -87,7 +79,6 @@ void equals(){ // =
         push(b == a);
     };
 }
-
 void less(){ // >
     if (stackEnd > 0){
         int a = *pop();
@@ -95,7 +86,6 @@ void less(){ // >
         push(a < b);
     };
 }
-
 void more(){ // <
     if (stackEnd > 0){
         int a = *pop();
@@ -103,7 +93,6 @@ void more(){ // <
         push(b < a);
     };
 }
-
 void AND(){
     if (stackEnd > 0){
         int a = *pop();
@@ -111,7 +100,6 @@ void AND(){
         push(b && a);
     };
 }
-
 void OR(){
     if (stackEnd > 0){
         int a = *pop();
@@ -119,32 +107,27 @@ void OR(){
         push(b && a);
     };
 }
-
 void INVERT(){
     if (stackEnd > 0){
         int a = *pop();
         push(!a);
     };
 }
-
 void print(){ // .
     if (stackEnd > 0){
         int a = *pop();
         printf("%d", a);
     }
 }
-
 void EMIT(){ // int as ascii
     if (stackEnd > 0){
         int a = *pop();
         printf("%c", (char)a);
     }
 }
-
 void CR(){
     printf("\n");
 }
-
 void dup(){
     if (stackEnd > 0){
         int a = *pop();
@@ -152,13 +135,11 @@ void dup(){
         push(a);
     }
 }
-
 void drop(){
     if (stackEnd > 0){
         pop();
     }
 }
-
 void swap(){
     if (stackEnd > 0){
         int a = *pop();
@@ -167,9 +148,8 @@ void swap(){
         push(b);
     }
 }
-
 void over(){
-    if (stackEnd > 0){
+   if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(a);
@@ -177,7 +157,6 @@ void over(){
         push(a);
     }
 }
-
 void rotate(){
     if (stackEnd > 1){
         int a = *pop();
@@ -191,6 +170,11 @@ void rotate(){
 void define(char c[], int* right, int* left);
 void passString(char c[]);
 
+void checkLast(){
+
+}
+
+// kører en custom funktion fra string_map og map
 void custom(char c[]){
     char * function = get_string(&string_map, c);
     passString(function);
@@ -199,12 +183,11 @@ void custom(char c[]){
 // deler strengen op i dele og pusher digits og kører funktioner
 void passString(char c[]){
     left = 0;
+    right = 0;
     int curr = 0;
     char curr_str[50];
-    for (right = 0; right<strlen(c)-1; right++){ // kør så længe der er char i strengen
 
-        // printf("Char is %c \n", c[right]);
-
+    for (; right<strlen(c); right++){ // kør så længe der er char i strengen
         if (c[right] == ' '){ // hvis et mellemrum findes
             if (isdigit(c[left]) != 0){ // og det er et digit
                 for(int i=0; i<right-left; i++){ // kør fra left til right og læg dem til med den rigtige potens
@@ -227,8 +210,12 @@ void passString(char c[]){
                     fptr(curr_str);
                 }
 
-                else{
+                else if (fptr != NULL){
                     fptr();
+                }
+                else{
+                    printf("Undefined");
+                    return;
                 }
 
             }
@@ -236,14 +223,9 @@ void passString(char c[]){
         }
         
     }
-    printStack();
-    printf("\n");
-
-
 }
 
-
-
+// definerer en ny custom funktion
 void define(char c[], int* right, int* left){
     char k[50];
 
@@ -284,7 +266,6 @@ void define(char c[], int* right, int* left){
 }   
 
 
-
 int main(void){
     // hashmap:
     map = init_hashMap();
@@ -309,16 +290,25 @@ int main(void){
     put(&map, "ROTATE", &rotate);
     put(&map, ":", &define);
 
-
-
-
     bool flag = true;
     char c[100];
     int maxSize = 50;
 
     while (flag){
         fgets(c, maxSize, stdin);
+        int str_length = strlen(c);
+
+        if (c[str_length-2] != ' '){
+            c[str_length-1] = ' ';
+            c[str_length]= '\n';
+            c[str_length+1] = '\000';
+
+        }
+
+      
+
         passString(c);
+        printStack();
     }
 
 
