@@ -191,6 +191,11 @@ void rotate(){
 void define(char c[], int* right, int* left);
 void passString(char c[]);
 
+void custom(char c[]){
+    char * function = get_string(&string_map, c);
+    passString(function);
+}
+
 // deler strengen op i dele og pusher digits og kører funktioner
 void passString(char c[]){
     left = 0;
@@ -214,7 +219,12 @@ void passString(char c[]){
                 fptr = get(&map, curr_str);
 
                 if (fptr == &define){
-                    fptr(&c, &right, &left); // we need to define a function and update indexes after
+                    fptr(c, &right, &left); // we need to define a function and update indexes after
+                    continue;
+                }
+
+                else if (fptr == &custom){
+                    fptr(curr_str);
                 }
 
                 else{
@@ -235,26 +245,37 @@ void passString(char c[]){
 
 
 void define(char c[], int* right, int* left){
-    char key[50];
+    char k[50];
+
+    for (int i = 0; i<strlen(c)-1; i++){
+        k[i] = '\000';
+    }
+
     char funktion[50];
-    int curr_left = *right;
+    int curr_left = *right + 1; // tag højde for mellemrum efter : 
     // find første mellemrum
     int i = 0;
+
+    printf("DEFINE");
+
     for (; i<strlen(c)-1; i++){
         if (c[curr_left+i] == ' '){
-            strncpy(key, c+curr_left, i);
+            strncpy(k, c+curr_left, i);
+            break;
         }
     }
     // find semikolon
-    int new_idx = curr_left +i ;
+    int new_idx = curr_left+i ;
     for (; i<strlen(c); i++){
         if (c[curr_left+i] == ';'){
-            strncpy(funktion, c+new_idx, curr_left+i-new_idx);
+            strncpy(funktion, c+new_idx+1, curr_left+i-new_idx-1);
+            break;
         }
     }
 
-    put_string(&string_map, key, funktion);
-    put(&map, key, &passString);
+
+    put_string(&string_map, k, funktion);
+    put(&map, k, &custom);
     
     *right = curr_left+i;
     *left = *right;
