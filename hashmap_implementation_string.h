@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define HASH_LENGTH 100
-#define KEY_MAX_LENGTH 50
+#define HASH_LENGTH 200
+#define KEY_MAX_LENGTH 200
 
 /*
 Functions:
@@ -21,7 +21,7 @@ Structures:
 typedef struct bucket_string{
     int hash;
     char key[KEY_MAX_LENGTH];
-    char value[50];
+    char value[KEY_MAX_LENGTH];
     struct bucket_string * next;
 } bucket_string;
 

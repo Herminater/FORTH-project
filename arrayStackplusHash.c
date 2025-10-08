@@ -6,8 +6,11 @@
 #include "hashmap_implementation.h"
 #include "hashmap_implementation_string.h"
 
+#define MAXSIZESTACK 200
+
+
 int stackEnd = -1;
-int stck[50];
+int stck[MAXSIZESTACK];
 hashMap map;
 hashMapString string_map;
 
@@ -15,7 +18,7 @@ hashMapString string_map;
 int left;
 int right;
 
-int* pop(void){
+int* pop(void){ // problem ved 1 item i stacken
     if (stackEnd == -1){
         return NULL;
     }
@@ -24,7 +27,7 @@ int* pop(void){
     return holder;
 }
 void push(int val){
-    if (stackEnd == 49){
+    if (stackEnd == MAXSIZESTACK ){
         return;
     }
     stackEnd++;
@@ -35,7 +38,7 @@ void printStack(void){
     for (int i = 0; i <= stackEnd; i++){
         printf("%d ", stck[i]);
     }
-    printf("\n");
+    printf("- ok \n");
 }
 void mult(){
     if (stackEnd > 0){
@@ -108,19 +111,19 @@ void OR(){
     };
 }
 void INVERT(){
-    if (stackEnd > 0){
+    if (stackEnd >= 0){
         int a = *pop();
         push(!a);
     };
 }
 void print(){ // .
-    if (stackEnd > 0){
+    if (stackEnd >= 0){
         int a = *pop();
-        printf("%d", a);
+        printf("%d\n", a);
     }
 }
 void EMIT(){ // int as ascii
-    if (stackEnd > 0){
+    if (stackEnd >= 0){
         int a = *pop();
         printf("%c", (char)a);
     }
@@ -129,14 +132,14 @@ void CR(){
     printf("\n");
 }
 void dup(){
-    if (stackEnd > 0){
+    if (stackEnd >= 0){
         int a = *pop();
         push(a);
         push(a);
     }
 }
 void drop(){
-    if (stackEnd > 0){
+    if (stackEnd >= 0){
         pop();
     }
 }
@@ -167,17 +170,31 @@ void rotate(){
         push(a);
     }
 };
+void printString(char c[], int* right, int* left){ // fejlen virker til at lægge i indexeringen i parsestringfunktionen, da ." aldrig køres
+    *right += 1; // tag højde for mellemrummet
+    int i;
+    for (i=0; i<strlen(c)-1; i++){
+        if (c[*right+i] == '\"'){
+            break;
+        }
+        printf("%c", c[*right+i]);
+    }
+    printf("\n");
+    *right += i+1+2;
+}
 void define(char c[], int* right, int* left);
 void passString(char c[]);
 
-void checkLast(){
-
-}
-
 // kører en custom funktion fra string_map og map
 void custom(char c[]){
+    int temp_left;
+    int temp_right;
+    temp_left = left;
+    temp_right = right;
     char * function = get_string(&string_map, c);
     passString(function);
+    left = temp_left;
+    right = temp_right;
 }
 
 // deler strengen op i dele og pusher digits og kører funktioner
@@ -185,7 +202,7 @@ void passString(char c[]){
     left = 0;
     right = 0;
     int curr = 0;
-    char curr_str[50];
+    char curr_str[MAXSIZESTACK];
 
     for (; right<strlen(c); right++){ // kør så længe der er char i strengen
         if (c[right] == ' '){ // hvis et mellemrum findes
@@ -198,11 +215,17 @@ void passString(char c[]){
             }
             else{
                 strncpy(curr_str, c+left, right-left); // pas på med den her igen:) - overvej loop
+                curr_str[right] = '\000';
                 void (*fptr)();
                 fptr = get(&map, curr_str);
 
                 if (fptr == &define){
                     fptr(c, &right, &left); // we need to define a function and update indexes after
+                    continue;
+                }
+
+                else if (fptr == &printString){
+                    fptr(c, &right, &left); // we need to parse the funktion and the pointers
                     continue;
                 }
 
@@ -214,7 +237,8 @@ void passString(char c[]){
                     fptr();
                 }
                 else{
-                    printf("Undefined");
+                    printf("%s - ?\n", curr_str);
+                    // printf("Letter is %c", c[right]);
                     return;
                 }
 
@@ -227,18 +251,18 @@ void passString(char c[]){
 
 // definerer en ny custom funktion
 void define(char c[], int* right, int* left){
-    char k[50];
+    char k[MAXSIZESTACK];
 
     for (int i = 0; i<strlen(c)-1; i++){
         k[i] = '\000';
     }
 
-    char funktion[50];
+    char funktion[MAXSIZESTACK ];
     int curr_left = *right + 1; // tag højde for mellemrum efter : 
     // find første mellemrum
     int i = 0;
 
-    printf("DEFINE");
+    // printf("DEFINE");
 
     for (; i<strlen(c)-1; i++){
         if (c[curr_left+i] == ' '){
@@ -257,9 +281,9 @@ void define(char c[], int* right, int* left){
 
 
     put_string(&string_map, k, funktion);
-    put(&map, k, &custom);
+    put(&map, k, &custom); 
     
-    *right = curr_left+i;
+    *right = curr_left+i+1;
     *left = *right;
     // 
 
@@ -277,28 +301,29 @@ int main(void){
     put(&map, "=", &equals);
     put(&map, ">", &less);
     put(&map, "<", &more);
-    put(&map, "AND", &AND);
-    put(&map, "OR", &OR);
-    put(&map, "INVERT", &INVERT);
+    put(&map, "and", &AND);
+    put(&map, "or", &OR);
+    put(&map, "invert", &INVERT);
     put(&map, ".", &print);
-    put(&map, "EMIT", &EMIT);
-    put(&map, "CR", &CR);
-    put(&map, "DUP", &dup);
-    put(&map, "DROP", &drop);
-    put(&map, "SWAP", &swap);
-    put(&map, "OVER", &over);
-    put(&map, "ROTATE", &rotate);
+    put(&map, "emit", &EMIT);
+    put(&map, "cr", &CR);
+    put(&map, "dup", &dup);
+    put(&map, "drop", &drop);
+    put(&map, "swap", &swap);
+    put(&map, "over", &over);
+    put(&map, "rot", &rotate);
     put(&map, ":", &define);
+    put(&map, ".\"", &printString);
 
     bool flag = true;
-    char c[100];
-    int maxSize = 50;
+    char c[MAXSIZESTACK];
+    int maxSize = MAXSIZESTACK;
 
     while (flag){
         fgets(c, maxSize, stdin);
         int str_length = strlen(c);
 
-        if (c[str_length-2] != ' '){
+        if (c[str_length-2] != ' '){ // sørger for mellemrum til sidst
             c[str_length-1] = ' ';
             c[str_length]= '\n';
             c[str_length+1] = '\000';
@@ -306,7 +331,7 @@ int main(void){
         }
 
       
-
+        // printf("%s", c);
         passString(c);
         printStack();
     }
