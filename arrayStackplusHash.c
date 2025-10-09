@@ -180,7 +180,8 @@ void printString(char c[], int* right, int* left){ // fejlen virker til at lægg
         printf("%c", c[*right+i]);
     }
     printf("\n");
-    *right += i+1+2;
+    *right += i+1;
+    *left = *right+1;
 }
 void define(char c[], int* right, int* left);
 void passString(char c[]);
@@ -191,8 +192,10 @@ void custom(char c[]){
     int temp_right;
     temp_left = left;
     temp_right = right;
+
     char * function = get_string(&string_map, c);
     passString(function);
+
     left = temp_left;
     right = temp_right;
 }
@@ -215,7 +218,7 @@ void passString(char c[]){
             }
             else{
                 strncpy(curr_str, c+left, right-left); // pas på med den her igen:) - overvej loop
-                curr_str[right] = '\000';
+                curr_str[right-left] = '\000';
                 void (*fptr)();
                 fptr = get(&map, curr_str);
 
