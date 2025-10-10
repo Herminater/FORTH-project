@@ -294,11 +294,113 @@ void custom(char c[]){ // kører en custom funktion fra string_map og map
     right = temp_right;
 }
 
+// void test(char c[]){
+//     element list[MAXSIZESTACK] = splitString(c); 
+// }
+
+// void handleList(element list[]){
+//     int i = 0;
+//     while (list[i].s[0] != '\\'){
+//         if (list[i].s[0] == '\000'){ // then we have a digit
+//             push(list[i].val);
+//         }
+//         else{
+//             char c[MAXSIZESTACK] = list[i].s;
+//             void (*fptr)();
+//             fptr = get(&map, list[i].s);
+
+//             // jeg skal bare sende en pointer med til hvilken funktion vi er ved og så er det det samme
+
+
+//             if (fptr == &define){
+//                 fptr(c, &right, &left); // we need to define a function and update indexes after
+//                 continue;
+//             }
+
+//             else if (fptr == &printString){
+//                 fptr(c, &right, &left); // we need to parse the funktion and the pointers
+//                 continue;
+//             }
+
+//             else if (fptr == &custom){
+//                 fptr(curr_str);
+//             }
+
+//             else if (fptr == &ifelse){
+//                 fptr(c, &right);
+//             }
+
+//             else if (fptr == &loop){
+//                 fptr(c, &right);
+//             }
+
+//             else if (fptr == &i_counter){
+//                 push(loop_counter);
+//             }
+
+//             else if (fptr != NULL){
+//                 fptr();
+//             }
+//             else{
+//                 printf("\033[1;31m"); // source for color-code and how to : https://medium.com/@selvarajk/adding-color-to-your-output-from-c-58f1a4dc4e75
+//                 printf("%s - ?\n", curr_str); 
+//                 printf("\033[0m");
+//                 // printf("Letter is %c", c[right]);
+//                 return;
+//             }
+
+//         }
+//     }
+// }
+
+element * splitString(char c[]){
+    left = 0;
+    right = 0;
+    int curr = 0;
+    int function_counter = 0;
+
+    element * list = (element *) calloc(MAXSIZESTACK, sizeof(element));
+    for (; right<strlen(c); right++){ // kør så længe der er char i strengen
+        if (c[right] == ' '){ // hvis et mellemrum findes
+            if (isdigit(c[left]) != 0){ // og det er et digit
+                for(int i=0; i<right-left; i++){ // kør fra left til right og læg dem til med den rigtige potens
+                    curr += (int)(c[left+i]-'0') * pow(10, right-left-1-i); // lægger tallet på left til ganget med en potens af 10
+                }
+                list[function_counter].val = curr;
+                list[function_counter++].s[0] = '\000';
+                curr = 0; // reset curr til næste gang et digit findes
+            }
+            else{
+                strncpy(list[function_counter].s, c+left, right-left); // pas på med den her igen:) - overvej loop
+                list[function_counter++].s[right-left] = '\\';
+            }
+        }
+    }
+
+    list[function_counter].s[0] == '\000';
+
+    return list;
+}
+
+
 void passString(char c[]){ // deler strengen op i dele og pusher digits og kører funktioner
     left = 0;
     right = 0;
     int curr = 0;
     char curr_str[MAXSIZESTACK];
+
+    element * list = splitString(c);
+    
+    int i=0;
+    while (list[i].s[0] != '\\'){
+        if (list[i].s[0] == '\000'){ // then we have a digit
+            printf("%d", list[i].val);
+        }
+        else{
+            printf("%s", list[i].s);
+        }
+        i++;
+    }
 
     for (; right<strlen(c); right++){ // kør så længe der er char i strengen
         if (c[right] == ' '){ // hvis et mellemrum findes
