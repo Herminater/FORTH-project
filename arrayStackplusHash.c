@@ -8,18 +8,23 @@
 
 #define MAXSIZESTACK 200
 
+typedef struct element{
+    int val;
+    char s[200];
+} element;
+
 
 int stackEnd = -1;
 int stck[MAXSIZESTACK];
-hashMap map;
-hashMapString string_map;
 
+hashMap map; // predefined functions
+hashMapString string_map; // custom function-values
 
-int left;
+int left; // global left og right -pointer til user-inputted string
 int right;
-int loop_counter;
+int loop_counter; // loop-counter til loops
 
-int* pop(void){ 
+int* pop(void){ // popper fra stacken og retunerer pointer til det poppede
     if (stackEnd == -1){
         return NULL;
     }
@@ -27,14 +32,14 @@ int* pop(void){
     stackEnd--;
     return holder;
 }
-void push(int val){
+void push(int val){ // pusher til stacken
     if (stackEnd == MAXSIZESTACK ){
         return;
     }
     stackEnd++;
     stck[stackEnd] = val;
 }
-void printStack(void){
+void printStack(void){ // printer stacken
     //printf("%d %d ", stack[0], stackEnd);
     for (int i = 0; i <= stackEnd; i++){
         printf("%d ", stck[i]);
@@ -43,110 +48,110 @@ void printStack(void){
     printf("- ok \n");
     printf("\033[0m");
 }
-void mult(){
+void mult(){ // popper 2 værdier fra stacken og pusher produktet
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(a * b);
     };
 }
-void add(){
+void add(){ // popper 2 værdier fra stacken og pusher summen
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(a + b);
     };
 }
-void sub(){
+void sub(){ // popper 2 værdier fra stacken og pusher differencen
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b - a);
     };
 }
-void divid(){
+void divid(){ // popper 2 værdier fra stacken og pusher de to tal divideret
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b / a);
     };
 }
-void mod(){
+void mod(){ // popper 2 værdier fra stacken og pusher moduluproduktet
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b % a);
     };
 }
-void equals(){ // =
+void equals(){ // popper 2 værdier fra stacken og pusher om de er ens
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b == a);
     };
 }
-void less(){ // >
+void less(){ // > popper 2 værdier fra stacken og pusher om toppen af stacken er mindre end anden øverst
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(a < b);
     };
 }
-void more(){ // <
+void more(){ // < popper 2 værdier fra stacken og pusher om toppen af stacken er større end anden øverst
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b < a);
     };
 }
-void AND(){
+void AND(){ // popper 2 værdier fra stacken og pusher om de er ens
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b && a);
     };
 }
-void OR(){
+void OR(){ // popper 2 værdier fra stacken og pusher om en af de er sande
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
         push(b || a);
     };
 }
-void INVERT(){
+void INVERT(){ // pusher modsat boolean value af topværdien
     if (stackEnd >= 0){
         int a = *pop();
         push(!a);
     };
 }
-void print(){ // .
+void print(){ // .  popper og printer
     if (stackEnd >= 0){
         int a = *pop();
         printf("%d ", a);
     }
 }
-void EMIT(){ // int as ascii
+void EMIT(){ // int as ascii.  popper og printer som ascii
     if (stackEnd >= 0){
         int a = *pop();
         printf("%c", (char)a);
     }
 }
-void CR(){
+void CR(){ // linjeskift
     printf("\n");
 }
-void dup(){
+void dup(){ // duplikerer top-værdien
     if (stackEnd >= 0){
         int a = *pop();
         push(a);
         push(a);
     }
 }
-void drop(){
+void drop(){ // popper topværdien
     if (stackEnd >= 0){
         pop();
     }
 }
-void swap(){
+void swap(){ // swapper de to øverste
     if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
@@ -154,7 +159,7 @@ void swap(){
         push(b);
     }
 }
-void over(){
+void over(){ // tager anden øverste og dupper og pusher den
    if (stackEnd > 0){
         int a = *pop();
         int b = *pop();
@@ -163,7 +168,7 @@ void over(){
         push(a);
     }
 }
-void rotate(){
+void rotate(){ // roterer øverste tre værdier
     if (stackEnd > 1){
         int a = *pop();
         int b = *pop();
@@ -173,7 +178,9 @@ void rotate(){
         push(a);
     }
 };
-void printString(char c[], int* right, int* left){ 
+
+void printString(char c[], int* right, int* left){  // tager en streng og printer fra venstre til højre
+
     *right += 1; // tag højde for mellemrummet
     int i;
     for (i=0; i<strlen(c)-1; i++){
@@ -185,14 +192,14 @@ void printString(char c[], int* right, int* left){
     *right += i+1;
     *left = *right+1;
 }
-void define(char c[], int* right, int* left);
-void passString(char c[]);
+void define(char c[], int* right, int* left); // prototype
+void passString(char c[]); // prototype
 
-void i_counter(){
+void i_counter(){ // adressen bruges bare til at parse korrekt funktion.
 
 }
 
-int find_subString(char c[], char s[], int start){
+int find_subString(char c[], char s[], int start){ // finder substring og retunerer første index, hvis substring ikke findes retuneres -1
     bool flag = false;
     for (int i = start; i<strlen(c); i++){
         if (c[i] == s[0]){
@@ -212,7 +219,7 @@ int find_subString(char c[], char s[], int start){
     return -1;
 }
 
-void loop(char c[], int *r){
+void loop(char c[], int *r){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
     *r += 1; // mellemrum
     int start = *pop();
     int end = *pop();
@@ -233,7 +240,7 @@ void loop(char c[], int *r){
 
 }
 
-void ifelse(char c[], int* right){
+void ifelse(char c[], int* right){ // conditional funktion. Tager fra første char efter if. 
     int p = *pop();
     bool t = (p == 0) ? false : true;
     *right += 1; // mellemrum
@@ -274,8 +281,7 @@ void ifelse(char c[], int* right){
 
 }
 
-// kører en custom funktion fra string_map og map
-void custom(char c[]){
+void custom(char c[]){ // kører en custom funktion fra string_map og map
     int temp_left;
     int temp_right;
     temp_left = left;
@@ -288,8 +294,7 @@ void custom(char c[]){
     right = temp_right;
 }
 
-// deler strengen op i dele og pusher digits og kører funktioner
-void passString(char c[]){
+void passString(char c[]){ // deler strengen op i dele og pusher digits og kører funktioner
     left = 0;
     right = 0;
     int curr = 0;
@@ -354,8 +359,7 @@ void passString(char c[]){
     }
 }
 
-// definerer en ny custom funktion
-void define(char c[], int* right, int* left){
+void define(char c[], int* right, int* left){ // definerer en ny custom funktion
     char k[MAXSIZESTACK];
 
     for (int i = 0; i<strlen(c)-1; i++){
@@ -391,7 +395,6 @@ void define(char c[], int* right, int* left){
     // 
 
 }   
-
 
 int main(void){
     // hashmap:
@@ -436,7 +439,6 @@ int main(void){
             c[str_length-1] = ' ';
             c[str_length]= '\n';
             c[str_length+1] = '\000';
-
         }
 
         // behandler strengen
