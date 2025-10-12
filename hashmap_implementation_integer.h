@@ -18,19 +18,19 @@ Structures:
     hashMap()
 */
 
-typedef struct bucket_element{
+typedef struct bucket{
     int hash;
     char key[KEY_MAX_LENGTH];
-    char value[KEY_MAX_LENGTH];
-    struct bucket_element * next;
-} bucket_element;
+    int int_val;
+    struct bucket * next;
+} bucket;
 
-typedef struct hashMapElement{
-    bucket_element * b[HASH_LENGTH];
-} hashMapElement;
+typedef struct hashMap{
+    bucket * b[HASH_LENGTH];
+} hashMap;
 
 // generates hashvalue and assigns index within max_length of the hash map
-int generate_hash_string(char key[]){
+int generate_hash(char key[]){
     int first = (int)key[0]*100;
     int second = (int)key[1]*1000;
     int hash = (first+second)%(HASH_LENGTH-1);
@@ -38,18 +38,18 @@ int generate_hash_string(char key[]){
 }
 
 // creates a new bucket for the hashmap
-bucket_element * init_bucket_element(int hsh, char k[], char value[]){ 
-    bucket_element *bu = (bucket_element *) malloc(sizeof(bucket_element));
+bucket * init_bucket(int hsh, char k[], int value){ 
+    bucket *bu = (bucket *) malloc(sizeof(bucket));
     bu->hash = hsh;
     strcpy(bu->key, k); // dette kan blive et problem med allokering af plads og overflow
-    strcpy(bu->value, value); // dette kan blive et problem med allokering af plads og overflow
+    bu->int_val = value;
     bu->next = NULL;
     return bu;
 }
 
 // initializes an empty hashmap with size hash_length
-hashMapElement init_hashMap_string(){
-    struct hashMapElement map;
+hashMap init_hashMap(){
+    struct hashMap map;
     for (int i=0; i<HASH_LENGTH; i++){
         map.b[i] = NULL;
     }
@@ -58,27 +58,27 @@ hashMapElement init_hashMap_string(){
 }
 
 // inserts key,value pair into hashmap
-void put_string(hashMapElement *map, char key[], char val[]){
-    int hash = generate_hash_string(key);
+void put(hashMap *map, char key[], int value){
+    int hash = generate_hash(key);
 
     // check for colisions
     // if no collisions:
     if (map->b[hash] == NULL){
-        map->b[hash] = init_bucket_element(hash, key, val);
+        map->b[hash] = init_bucket(hash, key, value);
         
     }
     // if colission
     else{
-        struct bucket_element * curr = map->b[hash];
+        struct bucket * curr = map->b[hash];
         do{ 
             // if value allready present:
             if (strcmp(key, curr->key) == 0){ 
-                strcpy(curr->value, val); // dette kan blive et problem med allokering af plads og overflow
+                curr->int_val = value;
                 return;
             }
             // if hash is same but value is different
             if (curr->next == NULL){
-                curr->next = init_bucket_element(hash,key,val);
+                curr->next = init_bucket(hash,key,value);
                 return;
             }
             curr = curr->next;
@@ -88,9 +88,9 @@ void put_string(hashMapElement *map, char key[], char val[]){
 }
 
 // fetches value with key
-char * get_string(hashMapElement *map, char key[]){ // retunerer en pointer til en function
-    int hash = generate_hash_string(key);
-    struct bucket_element * curr = map->b[hash];
+int get(hashMap *map, char key[]){ // retunerer en pointer til en function
+    int hash = generate_hash(key);
+    struct bucket * curr = map->b[hash];
 
     if (curr == NULL){ // if nothing on index
         return NULL;
@@ -99,7 +99,7 @@ char * get_string(hashMapElement *map, char key[]){ // retunerer en pointer til 
     do{ 
         // if match
         if (strcmp(key, curr->key) == 0){
-            return curr->value;
+            return curr->int_val;
         }
         curr = curr->next;
 
@@ -113,15 +113,19 @@ char * get_string(hashMapElement *map, char key[]){ // retunerer en pointer til 
 
 // int main(){
 //     hashMap map = init_hashMap();
-//     put(&map, "test", "1");
-//     put(&map, "temp", "2");
-//     put(&map, "telt", "3");
-//     put(&map, "test", "3");
+//     put(&map, "test", &add);
+//     put(&map, "temp", &add);
+//     put(&map, "telt", &add);
+//     put(&map, "test", &add);
 
-//     char c[50];
 
-//     strcpy(c, get(&map, "test"));
-//     printf("%s", c);
+//     void (*val1)(int, int, int*) = get(&map, "test");
+
+//     int a = 3;
+//     int b = 2;
+//     int x;
+//     val1(a,b, &x);
+//     printf("%d", x);
 //     return 0;
 
 // }

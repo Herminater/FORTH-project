@@ -13,3 +13,4 @@ typedef struct{
     node *last;
     int num;    
 } stack;
+

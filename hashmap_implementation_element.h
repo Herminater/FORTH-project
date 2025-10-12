@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 #define HASH_LENGTH 200
 #define KEY_MAX_LENGTH 200
 
@@ -17,11 +18,17 @@ Structures:
     bucket(hash, key, value)
     hashMap()
 */
+typedef struct element{
+    int type;
+    int val;
+    char s[200];
+} element;
+
 
 typedef struct bucket_element{
     int hash;
-    char key[KEY_MAX_LENGTH];
-    char value[KEY_MAX_LENGTH];
+    char *key;
+    element * value;
     struct bucket_element * next;
 } bucket_element;
 
@@ -38,17 +45,17 @@ int generate_hash_string(char key[]){
 }
 
 // creates a new bucket for the hashmap
-bucket_element * init_bucket_element(int hsh, char k[], char value[]){ 
+bucket_element * init_bucket_element(int hsh, char k[], element val[]){ 
     bucket_element *bu = (bucket_element *) malloc(sizeof(bucket_element));
     bu->hash = hsh;
-    strcpy(bu->key, k); // dette kan blive et problem med allokering af plads og overflow
-    strcpy(bu->value, value); // dette kan blive et problem med allokering af plads og overflow
+    bu->key = k;
+    bu->value = val;
     bu->next = NULL;
     return bu;
 }
 
 // initializes an empty hashmap with size hash_length
-hashMapElement init_hashMap_string(){
+hashMapElement init_hashMap_element(){
     struct hashMapElement map;
     for (int i=0; i<HASH_LENGTH; i++){
         map.b[i] = NULL;
@@ -58,13 +65,13 @@ hashMapElement init_hashMap_string(){
 }
 
 // inserts key,value pair into hashmap
-void put_string(hashMapElement *map, char key[], char val[]){
+void put_element(hashMapElement *map, char key[], element v[]){
     int hash = generate_hash_string(key);
 
     // check for colisions
     // if no collisions:
     if (map->b[hash] == NULL){
-        map->b[hash] = init_bucket_element(hash, key, val);
+        map->b[hash] = init_bucket_element(hash, key, v);
         
     }
     // if colission
@@ -73,12 +80,13 @@ void put_string(hashMapElement *map, char key[], char val[]){
         do{ 
             // if value allready present:
             if (strcmp(key, curr->key) == 0){ 
-                strcpy(curr->value, val); // dette kan blive et problem med allokering af plads og overflow
+                curr->value = v;
+                // memcpy(curr->value, v, sizeof(v));
                 return;
             }
             // if hash is same but value is different
             if (curr->next == NULL){
-                curr->next = init_bucket_element(hash,key,val);
+                curr->next = init_bucket_element(hash,key,v);
                 return;
             }
             curr = curr->next;
@@ -88,7 +96,7 @@ void put_string(hashMapElement *map, char key[], char val[]){
 }
 
 // fetches value with key
-char * get_string(hashMapElement *map, char key[]){ // retunerer en pointer til en function
+element * get_element(hashMapElement *map, char key[]){ // retunerer en pointer til en function
     int hash = generate_hash_string(key);
     struct bucket_element * curr = map->b[hash];
 
@@ -99,7 +107,7 @@ char * get_string(hashMapElement *map, char key[]){ // retunerer en pointer til 
     do{ 
         // if match
         if (strcmp(key, curr->key) == 0){
-            return curr->value;
+            return (element *)curr->value;
         }
         curr = curr->next;
 
@@ -112,7 +120,7 @@ char * get_string(hashMapElement *map, char key[]){ // retunerer en pointer til 
 
 
 // int main(){
-//     hashMap map = init_hashMap();
+//     hashMapElement map = init_hashMap_element();
 //     put(&map, "test", "1");
 //     put(&map, "temp", "2");
 //     put(&map, "telt", "3");
