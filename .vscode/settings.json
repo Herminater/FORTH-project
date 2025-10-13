@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "random": "cpp",
-        "hashmap_implementation_element": "c"
+        "hashmap_implementation_element": "c",
+        "hashmap_implementation_element.h": "c"
     }
 }

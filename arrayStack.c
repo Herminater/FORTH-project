@@ -4,7 +4,6 @@
 #include <math.h>
 #include <string.h>
 
-
 int stackEnd = -1;
 int stck[50];
 

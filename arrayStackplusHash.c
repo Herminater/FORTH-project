@@ -3,7 +3,8 @@
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
-#include "hashmap_implementation.h"
+#include "stackArray.h"
+#include "hashmap_implementation_functions.h"
 // #include "hashmap_implementation_string.h"
 #include "hashmap_implementation_element.h"
 
@@ -12,6 +13,15 @@ BUGS:
 1 -> if 50 then -> . giver nogen gange at print ikke kører
 ." test" <- skal have et mellemrum efter test ellers duer det ikke.
 
+
+TODO:
+Ændre sådan at alle navnene på hashmaps, funktioner osv passer
+Ændre sådan at man bare bruger et compiler struct til at køre alt
+Ændre hashmap istedet er en array
+Fikse så init i hashmappene retunerer pointers
+Fikse så loop ikke har en global variabel (samme med stck og hshmaps)
+Gøre operator til en del af 
+Samle alle definationerne af forskellige max-værdier osv
 */
 
 #define MAXSIZESTACK 200
@@ -23,172 +33,204 @@ enum operator{
     stop
 };
 
-int stackEnd = -1;
-int stck[MAXSIZESTACK];
-
+Stack * stack;
 hashMap map; // predefined functions
 hashMapElement custom_function_map; // custom function-values
 
 int loop_counter; // loop-counter til loops
 
-int* pop(void){ // popper fra stacken og retunerer pointer til det poppede
-    if (stackEnd == -1){
-        return NULL;
+void mult(Stack * stck){ // popper 2 værdier fra stacken og pusher produktet
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a * b);
     }
-    int* holder = &stck[stackEnd];
-    stackEnd--;
-    return holder;
-}
-void push(int val){ // pusher til stacken
-    if (stackEnd == MAXSIZESTACK ){
-        return;
+    else{
+        printf("Not enough items in stack");
     }
-    stackEnd++;
-    stck[stackEnd] = val;
 }
-void printStack(void){ // printer stacken
-    //printf("%d %d ", stack[0], stackEnd);
-    printf("\n");
-    for (int i = 0; i <= stackEnd; i++){
-        printf("%d ", stck[i]);
+void add(Stack * stck){ // popper 2 værdier fra stacken og pusher summen
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a + b);
     }
-    printf("\033[0;32m"); // source for codes and how to: https://medium.com/@selvarajk/adding-color-to-your-output-from-c-58f1a4dc4e75
-    printf("- ok \n");
-    printf("\033[0m");
+    else{
+        printf("Not enough items in stack");
+
+    }
 }
-void mult(){ // popper 2 værdier fra stacken og pusher produktet
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(a * b);
-    };
+void sub(Stack * stck){ // popper 2 værdier fra stacken og pusher differencen
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, b - a);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void add(){ // popper 2 værdier fra stacken og pusher summen
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(a + b);
-    };
+void divid(Stack * stck){ // popper 2 værdier fra stacken og pusher de to tal divideret
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, b / a);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void sub(){ // popper 2 værdier fra stacken og pusher differencen
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b - a);
-    };
+void mod(Stack * stck){ // popper 2 værdier fra stacken og pusher moduluproduktet
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, b % a);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void divid(){ // popper 2 værdier fra stacken og pusher de to tal divideret
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b / a);
-    };
+void equals(Stack * stck){ // popper 2 værdier fra stacken og pusher om de er ens
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, b == a);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void mod(){ // popper 2 værdier fra stacken og pusher moduluproduktet
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b % a);
-    };
+void less(Stack * stck){ // > popper 2 værdier fra stacken og pusher om toppen af stacken er mindre end anden øverst
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a < b);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void equals(){ // popper 2 værdier fra stacken og pusher om de er ens
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b == a);
-    };
+void more(Stack * stck){ // < popper 2 værdier fra stacken og pusher om toppen af stacken er større end anden øverst
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, b < a);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void less(){ // > popper 2 værdier fra stacken og pusher om toppen af stacken er mindre end anden øverst
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(a < b);
-    };
+void AND(Stack * stck){ // popper 2 værdier fra stacken og pusher om de er ens
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a && b);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void more(){ // < popper 2 værdier fra stacken og pusher om toppen af stacken er større end anden øverst
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b < a);
-    };
+void OR(Stack * stck){ // popper 2 værdier fra stacken og pusher om en af de er sande
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a || b);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void AND(){ // popper 2 værdier fra stacken og pusher om de er ens
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b && a);
-    };
+void INVERT(Stack * stck){ // pusher modsat boolean value af topværdien
+    if (!is_empty(stck)){
+        int a = pop(stck);
+        push(stck, !a);
+    }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void OR(){ // popper 2 værdier fra stacken og pusher om en af de er sande
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(b || a);
-    };
-}
-void INVERT(){ // pusher modsat boolean value af topværdien
-    if (stackEnd >= 0){
-        int a = *pop();
-        push(!a);
-    };
-}
-void print(){ // .  popper og printer
-    if (stackEnd >= 0){
-        int a = *pop();
+void print(Stack * stck){ // .  popper og printer
+    if (!is_empty(stck)){
+        int a = pop(stck);
         printf("%d ", a);
     }
+    else{
+        printf("Not enough items in stack");
+    }
 }
-void EMIT(){ // int as ascii.  popper og printer som ascii
-    if (stackEnd >= 0){
-        int a = *pop();
-        printf("%c", (char)a);
+void EMIT(Stack * stck){ // int as ascii.  popper og printer som ascii
+    if (!is_empty(stck)){
+        int a = pop(stck);
+        printf("%c ", (char)a);
+    }
+    else{
+        printf("Not enough items in stack");
     }
 }
 void CR(){ // linjeskift
     printf("\n");
 }
-void dup(){ // duplikerer top-værdien
-    if (stackEnd >= 0){
-        int a = *pop();
-        push(a);
-        push(a);
+void dup(Stack * stck){ // duplikerer top-værdien
+    if (!is_empty(stck)){
+        int a = pop(stck);
+        push(stck, a);
+        push(stck, a);
+    }
+    else{
+        printf("Not enough items in stack");
     }
 }
-void drop(){ // popper topværdien
-    if (stackEnd >= 0){
-        pop();
+void drop(Stack * stck){ // popper topværdien
+    if (!is_empty(stck)){
+        pop(stck);
+    }
+    else{
+        printf("Not enough items in stack");
     }
 }
-void swap(){ // swapper de to øverste
-    if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(a);
-        push(b);
+void swap(Stack * stck){ // swapper de to øverste
+    if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a);
+        push(stck, b);
+    }
+    else{
+        printf("Not enough items in stack");
     }
 }
-void over(){ // tager anden øverste og dupper og pusher den
-   if (stackEnd > 0){
-        int a = *pop();
-        int b = *pop();
-        push(a);
-        push(b);
-        push(a);
+void over(Stack * stck){ // tager anden øverste og dupper og pusher den
+   if (stck->stackEnd > 0){
+        int a = pop(stck);
+        int b = pop(stck);
+        push(stck, a);
+        push(stck, b);
+        push(stck, a);
+
+    }
+    else{
+        printf("Not enough items in stack");
     }
 }
-void rotate(){ // roterer øverste tre værdier
-    if (stackEnd > 1){
-        int a = *pop();
-        int b = *pop();
-        int c = *pop();
-        push(b);
-        push(c);
-        push(a);
+void rotate(Stack * stck){ // roterer øverste tre værdier
+    if (stck->stackEnd > 1){
+        int a = pop(stck);
+        int b = pop(stck);
+        int c = pop(stck);
+        push(stck, b);
+        push(stck, c);
+        push(stck, a);
+    }
+    else{
+        printf("Not enough items in stack");
     }
 };
-void stopper(){}
 
-void printString(element list[], int * i){  // tager en streng og printer fra venstre til højre
+// prototyper
+void define(element list[], int *i);
+void handleList(Stack * stck, element list[], int start, int last);
+
+void printString(element list[], int * i){ 
 
     *i += 1; // skip ."
 
@@ -206,13 +248,9 @@ void printString(element list[], int * i){  // tager en streng og printer fra ve
         *i += 1;
     }
 }
-void define(element list[], int *i);
-void handleList(element list[], int start, int last);
-
-void i_counter(){ // adressen bruges bare til at parse korrekt funktion.
-    push(loop_counter);
+void i_counter(Stack * stck){ // adressen bruges bare til at parse korrekt funktion.
+    push(stck, loop_counter);
 }
-
 int find_subString(element list[], char st[], int start){ // finder substring og retunerer første index, hvis substring ikke findes retuneres -1
     int j = 0; 
     while (list[start+j].type != stop){
@@ -223,25 +261,23 @@ int find_subString(element list[], char st[], int start){ // finder substring og
     }
     return -1;
 }
-
-void loop(element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
+void loop(Stack * stck, element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
     *i += 1; // hop over do
     int loop = find_subString(list, "loop", *i);
-    int start = *pop();
-    int end = *pop();
+    int start = pop(stck);
+    int end = pop(stck);
 
     loop_counter = start; 
     for (int k=start;k<end;k++){
-        handleList(list, *i, loop);
+        handleList(stck, list, *i, loop);
         loop_counter++;
     }
     *i = loop;
 }
-
-void ifelse(element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
+void ifelse(Stack * stck, element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
     *i += 1;
 
-    int p = *pop();
+    int p = pop(stck);
     bool condition = (p == 0) ? false : true;
     char new[MAXSIZESTACK];
 
@@ -256,37 +292,35 @@ void ifelse(element list[], int * i){ // conditional funktion. Tager fra første
 
     if (!condition){ // hvis condition ikke er true skal der kun gøres noget hvis der er en else
         if (idx_else != -1){
-            handleList(list, idx_else+1, idx_then);
+            handleList(stck, list, idx_else+1, idx_then);
         }
     }else{
         if (idx_else != -1){
-            handleList(list, *i, idx_else);
+            handleList(stck, list, *i, idx_else);
         }
         else{
-            handleList(list, *i, idx_then);
+            handleList(stck, list, *i, idx_then);
         }
     }
     *i = idx_then;// skip then
 }
-
-void custom(char k[], int * i){ // kører en custom funktion fra string_map og map
+void custom(Stack * stck, char k[], int * i){ // kører en custom funktion fra string_map og map
 
     int curr_idx = *i; // vi vil ikke ændre i
 
     element * function = get_element(&custom_function_map, k);
-    handleList(function, 0, ARRAYEND);
+    handleList(stck, function, 0, ARRAYEND);
 
     *i = curr_idx;
 }
-
-void handleList(element list[], int first, int last){
+void handleList(Stack * stck, element list[], int first, int last){
     void (*fptr)();
     int i=first;
 
     while (list[i].type != stop && i < last){
         // vi har et digit
         if (list[i].type == digit){ 
-            push(list[i].val);
+            push(stck, list[i].val);
         }
         // vi har en funktion
         else{
@@ -305,19 +339,19 @@ void handleList(element list[], int first, int last){
             }
 
             else if (fptr == &ifelse){
-                fptr(list, &i);
+                fptr(stck, list, &i);
             }
 
             else if (fptr == &loop){
-                fptr(list, &i);
+                fptr(stck, list, &i);
             }
 
             else if (fptr == &i_counter){
-                i_counter();
+                i_counter(stck);
             }
 
             else if (fptr != NULL){
-                fptr();
+                fptr(stck);
             }
             else{
                 printf("\033[1;31m"); // source for color-code and how to : https://medium.com/@selvarajk/adding-color-to-your-output-from-c-58f1a4dc4e75
@@ -332,7 +366,6 @@ void handleList(element list[], int first, int last){
         i++;
     }
 }
-
 element * splitString(char c[]){
     int left = 0;
     int right = 0;
@@ -366,7 +399,6 @@ element * splitString(char c[]){
 
     return list;
 }
-
 void define(element list[], int * i){ // definerer en ny custom funktion
     
     element * ny_list = malloc(sizeof(element)*MAXSIZESTACK);
@@ -404,6 +436,10 @@ void define(element list[], int * i){ // definerer en ny custom funktion
 int main(void){
     // hashmap:
     map = init_hashMap();
+    // stacken
+    stack = init_stack();
+
+    // mangler der ikke en initialisering af element_mappen?
 
     // definer basic functions
     put(&map, "*", &mult);
@@ -430,16 +466,17 @@ int main(void){
     put(&map, "if", &ifelse);
     put(&map, "do", &loop);
     put(&map, "i", &i_counter);
-    put(&map, ";", &stopper);
-
-
-    bool flag = true;
+    
     char c[MAXSIZESTACK]; // holder nuværende input fra brugeren
-    int maxSize = MAXSIZESTACK;
+    int str_length;
 
-    while (flag){
-        fgets(c, maxSize, stdin);
-        int str_length = strlen(c);
+    while (true){
+        fgets(c, MAXSIZESTACK, stdin);
+        str_length = strlen(c);
+
+        if (strcmp(c, "quit") == 0){ // quit-funktion
+            break;
+        }
 
         if (c[str_length-2] != ' '){ // sørger for mellemrum til sidst hvis glemt
             c[str_length-1] = ' ';
@@ -447,13 +484,13 @@ int main(void){
             c[str_length+1] = '\000';
         }
 
+       
         // deler strengen i digits og strings
         element * list = splitString(c);
-
         // kører respektive funktioner
-        handleList(list, 0, ARRAYEND);
+        handleList(stack, list, 0, ARRAYEND);
         
-        printStack();
+        printStack(stack);
     }
 
     return 1;
