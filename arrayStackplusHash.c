@@ -22,6 +22,7 @@ Fikse så init i hashmappene retunerer pointers
 Fikse så loop ikke har en global variabel (samme med stck og hshmaps)
 Gøre operator til en del af 
 Samle alle definationerne af forskellige max-værdier osv
+Gør sæt mellemrum ind delen af while(true) til en function
 */
 
 #define MAXSIZESTACK 200
