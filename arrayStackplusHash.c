@@ -4,9 +4,7 @@
 #include <math.h>
 #include <string.h>
 #include "stackArray.h"
-#include "hashmap_implementation_functions.h"
-// #include "hashmap_implementation_string.h"
-#include "hashmap_implementation_element.h"
+#include "hashMapArray.h"
 
 /*
 BUGS:
@@ -15,14 +13,16 @@ BUGS:
 
 
 TODO:
-Ændre sådan at alle navnene på hashmaps, funktioner osv passer
 Ændre sådan at man bare bruger et compiler struct til at køre alt
-Ændre hashmap istedet er en array
-Fikse så init i hashmappene retunerer pointers
-Fikse så loop ikke har en global variabel (samme med stck og hshmaps)
-Gøre operator til en del af 
+Fikse så loop ikke har en global variabel 
+Gøre operator til en del af alle?
 Samle alle definationerne af forskellige max-værdier osv
 Gør sæt mellemrum ind delen af while(true) til en function
+add variable med memory (Skulle være let siden stacken har int *)
+
+IN THE WORKS:
+Ændre sådan at alle navnene på hashmaps, funktioner osv passer
+
 */
 
 #define MAXSIZESTACK 200
@@ -33,10 +33,6 @@ enum operator{
     digit, 
     stop
 };
-
-Stack * stack;
-hashMap map; // predefined functions
-hashMapElement custom_function_map; // custom function-values
 
 int loop_counter; // loop-counter til loops
 
@@ -228,10 +224,10 @@ void rotate(Stack * stck){ // roterer øverste tre værdier
 };
 
 // prototyper
-void define(element list[], int *i);
-void handleList(Stack * stck, element list[], int start, int last);
+void define(HashMapArray * hsh_func, HashMapArray * custom_function_map, functions_liste_element list[], int *i);
+void handleList(HashMapArray * hsh_func, HashMapArray * custom_function_map, Stack * stck, functions_liste_element list[], int start, int last);
 
-void printString(element list[], int * i){ 
+void printString(functions_liste_element list[], int * i){ 
 
     *i += 1; // skip ."
 
@@ -252,7 +248,7 @@ void printString(element list[], int * i){
 void i_counter(Stack * stck){ // adressen bruges bare til at parse korrekt funktion.
     push(stck, loop_counter);
 }
-int find_subString(element list[], char st[], int start){ // finder substring og retunerer første index, hvis substring ikke findes retuneres -1
+int find_subString(functions_liste_element list[], char st[], int start){ // finder substring og retunerer første index, hvis substring ikke findes retuneres -1
     int j = 0; 
     while (list[start+j].type != stop){
         if (list[start+j].type == string && strcmp(list[start+j].s, st) == 0){
@@ -262,7 +258,7 @@ int find_subString(element list[], char st[], int start){ // finder substring og
     }
     return -1;
 }
-void loop(Stack * stck, element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
+void loop(HashMapArray * hsh_func, HashMapArray * custom_function_map, Stack * stck, functions_liste_element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
     *i += 1; // hop over do
     int loop = find_subString(list, "loop", *i);
     int start = pop(stck);
@@ -270,12 +266,12 @@ void loop(Stack * stck, element list[], int * i){ // loop-funktion. Tager en str
 
     loop_counter = start; 
     for (int k=start;k<end;k++){
-        handleList(stck, list, *i, loop);
+        handleList(hsh_func, custom_function_map, stck, list, *i, loop);
         loop_counter++;
     }
     *i = loop;
 }
-void ifelse(Stack * stck, element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
+void ifelse(HashMapArray * hsh_func, HashMapArray * custom_function_map, Stack * stck, functions_liste_element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
     *i += 1;
 
     int p = pop(stck);
@@ -293,28 +289,28 @@ void ifelse(Stack * stck, element list[], int * i){ // conditional funktion. Tag
 
     if (!condition){ // hvis condition ikke er true skal der kun gøres noget hvis der er en else
         if (idx_else != -1){
-            handleList(stck, list, idx_else+1, idx_then);
+            handleList(hsh_func, custom_function_map, stck, list, idx_else+1, idx_then);
         }
     }else{
         if (idx_else != -1){
-            handleList(stck, list, *i, idx_else);
+            handleList(hsh_func, custom_function_map, stck, list, *i, idx_else);
         }
         else{
-            handleList(stck, list, *i, idx_then);
+            handleList(hsh_func, custom_function_map, stck, list, *i, idx_then);
         }
     }
     *i = idx_then;// skip then
 }
-void custom(Stack * stck, char k[], int * i){ // kører en custom funktion fra string_map og map
+void custom(HashMapArray * hsh_func, HashMapArray * custom_function_map, Stack * stck, char k[], int * i){ // kører en custom funktion fra string_map og map
 
     int curr_idx = *i; // vi vil ikke ændre i
 
-    element * function = get_element(&custom_function_map, k);
-    handleList(stck, function, 0, ARRAYEND);
+    functions_liste_element * function = (get(custom_function_map, k)->element_liste);
+    handleList(hsh_func, custom_function_map, stck, function, 0, ARRAYEND);
 
     *i = curr_idx;
 }
-void handleList(Stack * stck, element list[], int first, int last){
+void handleList(HashMapArray * hsh_func, HashMapArray * custom_function_map, Stack * stck, functions_liste_element list[], int first, int last){
     void (*fptr)();
     int i=first;
 
@@ -325,10 +321,10 @@ void handleList(Stack * stck, element list[], int first, int last){
         }
         // vi har en funktion
         else{
-            fptr = get(&map, list[i].s);
+            fptr = (get(hsh_func, list[i].s)->fptr);
             
             if (fptr == &define){
-                fptr(list, &i); // we need to define a function and update indexes after
+                fptr(hsh_func, custom_function_map, list, &i); // we need to define a function and update indexes after
             }
 
             else if (fptr == &printString){
@@ -336,15 +332,14 @@ void handleList(Stack * stck, element list[], int first, int last){
             }
 
             else if (fptr == &custom){
-                fptr(list[i].s, &i);
+                fptr(hsh_func, custom_function_map, stck,list[i].s, &i);
             }
 
             else if (fptr == &ifelse){
-                fptr(stck, list, &i);
+                fptr(hsh_func, custom_function_map, stck, list, &i);
             }
-
             else if (fptr == &loop){
-                fptr(stck, list, &i);
+                fptr(hsh_func, custom_function_map, stck, list, &i);
             }
 
             else if (fptr == &i_counter){
@@ -367,13 +362,13 @@ void handleList(Stack * stck, element list[], int first, int last){
         i++;
     }
 }
-element * splitString(char c[]){
+functions_liste_element * splitString(char c[]){
     int left = 0;
     int right = 0;
     int curr = 0;
     int function_counter = 0;
 
-    element * list = malloc(sizeof(element)*MAXSIZESTACK);
+    functions_liste_element * list = malloc(sizeof(functions_liste_element)*MAXSIZESTACK);
 
     for (; right<strlen(c); right++){ // kør så længe der er char i strengen
         if (c[right] == ' '){ // hvis et mellemrum findes
@@ -400,9 +395,9 @@ element * splitString(char c[]){
 
     return list;
 }
-void define(element list[], int * i){ // definerer en ny custom funktion
+void define(HashMapArray * hsh_func, HashMapArray * custom_function_map, functions_liste_element list[], int * i){ // definerer en ny custom funktion
     
-    element * ny_list = malloc(sizeof(element)*MAXSIZESTACK);
+    functions_liste_element * ny_list = malloc(sizeof(functions_liste_element)*MAXSIZESTACK);
 
     // first one is the key;
     *i += 2; // skip the colon and the key;
@@ -430,43 +425,41 @@ void define(element list[], int * i){ // definerer en ny custom funktion
     ny_list[function_count].type = stop;
 
     // gem streng
-    put_element(&custom_function_map, list[first_idx-1].s, ny_list);
-    put(&map, list[first_idx-1].s, &custom); 
+    put_elements(custom_function_map, list[first_idx-1].s, ny_list, type_functions_liste_element);
+    put_func(hsh_func, list[first_idx-1].s, &custom, type_func); 
 }   
 
 int main(void){
-    // hashmap:
-    map = init_hashMap();
-    // stacken
-    stack = init_stack();
-
-    // mangler der ikke en initialisering af element_mappen?
+    HashMapArray * hsh_func = init_hashMapArray(type_func, 10);
+    HashMapArray * custom_function_map = init_hashMapArray(type_functions_liste_element, 10);
+    Stack * stack = init_stack();
 
     // definer basic functions
-    put(&map, "*", &mult);
-    put(&map, "/", &divid);
-    put(&map, "+", &add);
-    put(&map, "-", &sub);
-    put(&map, "mod", &mod);
-    put(&map, "=", &equals);
-    put(&map, ">", &less);
-    put(&map, "<", &more);
-    put(&map, "and", &AND);
-    put(&map, "or", &OR);
-    put(&map, "invert", &INVERT);
-    put(&map, ".", &print);
-    put(&map, "emit", &EMIT);
-    put(&map, "cr", &CR);
-    put(&map, "dup", &dup);
-    put(&map, "drop", &drop);
-    put(&map, "swap", &swap);
-    put(&map, "over", &over);
-    put(&map, "rot", &rotate);
-    put(&map, ":", &define);
-    put(&map, ".\"", &printString);
-    put(&map, "if", &ifelse);
-    put(&map, "do", &loop);
-    put(&map, "i", &i_counter);
+
+    put(hsh_func, "*", (union value)&mult, type_func); 
+    put(hsh_func, "/", (union value)&divid, type_func);
+    put(hsh_func, "+", (union value)&add, type_func);
+    put(hsh_func, "-", (union value)&sub, type_func);
+    put(hsh_func, "mod", (union value)&mod,type_func );
+    put(hsh_func, "=", (union value)&equals,type_func );
+    put(hsh_func, ">", (union value)&less,type_func );
+    put(hsh_func, "<", (union value)&more,type_func );
+    put(hsh_func, "and", (union value)&AND,type_func );
+    put(hsh_func, "or", (union value)&OR,type_func );
+    put(hsh_func, "invert", (union value)&INVERT,type_func );
+    put(hsh_func, ".", (union value)&print,type_func);
+    put(hsh_func, "emit", (union value)&EMIT,type_func );
+    put(hsh_func, "cr", (union value)&CR,type_func);
+    put(hsh_func, "dup", (union value)&dup,type_func);
+    put(hsh_func, "drop", (union value)&drop,type_func);
+    put(hsh_func, "swap", (union value)&swap,type_func);
+    put(hsh_func, "over", (union value)&over,type_func);
+    put(hsh_func, "rot", (union value)&rotate,type_func);
+    put(hsh_func, ":", (union value)&define, type_func);
+    put(hsh_func, ".\"", (union value)&printString,type_func);
+    put(hsh_func, "if", (union value)&ifelse,type_func);
+    put(hsh_func, "do", (union value)&loop,type_func);
+    put(hsh_func, "i", (union value)&i_counter,type_func);
     
     char c[MAXSIZESTACK]; // holder nuværende input fra brugeren
     int str_length;
@@ -487,10 +480,9 @@ int main(void){
 
        
         // deler strengen i digits og strings
-        element * list = splitString(c);
+        functions_liste_element * list = splitString(c);
         // kører respektive funktioner
-        handleList(stack, list, 0, ARRAYEND);
-        
+        handleList(hsh_func, custom_function_map, stack, list, 0, ARRAYEND);
         printStack(stack);
     }
 
