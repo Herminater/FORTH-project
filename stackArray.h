@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define STACKMAXSIZE 50
+#define STACKMAXSIZE 200
 
 typedef struct Stack{
     int stackEnd;

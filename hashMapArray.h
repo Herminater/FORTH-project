@@ -10,14 +10,10 @@ typedef struct functions_liste_element{
     int val;
     char s[200];
 }functions_liste_element;
-
-enum type_of{
-        type_int,
-        type_str,
-        type_func,
-        type_functions_liste_element
-};
-
+typedef struct element{
+    char * key;
+    union value * val;
+} element;
 union value{
     int i;
     char * s;
@@ -26,10 +22,12 @@ union value{
 
 } value;
 
-typedef struct element{
-    char * key;
-    union value * val;
-} element;
+enum type_of_value{
+        type_int,
+        type_str,
+        type_func,
+        type_functions_liste_element
+};
 
 typedef struct{
     int type;
@@ -37,18 +35,13 @@ typedef struct{
     int listEnd;
 } HashMapArray;
 
-// currently not being used
-bool compare(element * a, union value * b, int type){
-    if (type == type_int){
-        return (a->val->i == b->i);
-    }
-    if (type == type_str){
-        return (strcmp(a->val->s, b->s) == 0);
-    }
-    if (type = type_func){
-        return (a->val->fptr == b->fptr);
-    }
+
+union value * init_value_func(void(*fptr)()){
+    union value * ny_v = (union value * ) malloc(sizeof(ny_v));
+    ny_v->fptr = fptr;
+    return ny_v;
 }
+
 element * init_element(char k[], union value v){
     element * elm = (element * )malloc(sizeof(element));
     union value * ny_v = (union value *)malloc(sizeof(union value));
@@ -66,12 +59,13 @@ HashMapArray * init_hashMapArray(int t, int size){
     return hashmaparray;
 }
 
-void put(HashMapArray * hashmaparray, char k[], union value val, int type){
+void put(HashMapArray * hashmaparray, char k[], union value *val, int type){
     if (hashmaparray->type != type){
         printf("Error, typees dont match");
+        return;
     }
     
-    element * ny_elm = ny_elm = init_element(k, val);
+    element * ny_elm = ny_elm = init_element(k, *val);
     element * v = (element *) malloc(sizeof(element));
 
     for (int i=0; i<hashmaparray->listEnd; i++){
@@ -87,19 +81,16 @@ void put(HashMapArray * hashmaparray, char k[], union value val, int type){
 }   
 // liste af elementer
 void put_elements(HashMapArray * hashmaparray, char k[], functions_liste_element e[], int type){
-    union value ny;
-    ny.element_liste = e;
+    union value * ny = (union value *)malloc(sizeof(union value));
+    ny->element_liste = e;
     put(hashmaparray, k, ny, type);
 }
 // function pointer
 void put_func(HashMapArray * hashmaparray, char k[], void(*fptr)(), int type){
-    union value ny;
-    ny.fptr = fptr;
+    union value * ny = (union value *)malloc(sizeof(union value));
+    ny->fptr = fptr;
     put(hashmaparray, k, ny, type);
 }
-
-
-
 
 union value * get(HashMapArray * hashmaparray, char k[]){
     element * v = (element *) malloc(sizeof(element));

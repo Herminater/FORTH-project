@@ -3,8 +3,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
-#include "stackArray.h"
-#include "hashMapArray.h"
+#include "compiler.h"
 
 /*
 BUGS:
@@ -13,28 +12,26 @@ BUGS:
 
 
 TODO:
-Ændre sådan at man bare bruger et compiler struct til at køre alt
 Fikse så loop ikke har en global variabel 
-Gøre operator til en del af alle?
-Samle alle definationerne af forskellige max-værdier osv
-Gør sæt mellemrum ind delen af while(true) til en function
 add variable med memory (Skulle være let siden stacken har int *)
 
 IN THE WORKS:
-Ændre sådan at alle navnene på hashmaps, funktioner osv passer
 
 */
+#define MAXSIZE_CHAR 200
+#define MAXSIZE_STACK 200
+#define BIGNUM 5000
 
-#define MAXSIZESTACK 200
-#define ARRAYEND 5000
-
-enum operator{
+// this is for testing the elements in the function list
+enum type_of_element{
     string, 
     digit, 
     stop
 };
 
 int loop_counter; // loop-counter til loops
+
+// setup
 
 void mult(Stack * stck){ // popper 2 værdier fra stacken og pusher produktet
     if (stck->stackEnd > 0){
@@ -222,11 +219,11 @@ void rotate(Stack * stck){ // roterer øverste tre værdier
         printf("Not enough items in stack");
     }
 };
-
 // prototyper
 void define(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int *i);
 void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int start, int last);
-
+void variable(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int * i);
+// mere kompliserede funktioner
 void printString(functions_liste_element list[], int * i){ 
 
     *i += 1; // skip ."
@@ -276,7 +273,7 @@ void ifelse(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs,
 
     int p = pop(stck);
     bool condition = (p == 0) ? false : true;
-    char new[MAXSIZE_STACK];
+    char new[MAXSIZE_CHAR];
 
     int idx_then = find_subString(list, "then", *i);
     int idx_else = find_subString(list, "else" ,*i);
@@ -305,6 +302,7 @@ void custom(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs,
 
     int curr_idx = *i; // vi vil ikke ændre i
 
+    // FEJLEN LIGGER HER, da funtionen bliver et enkelt element istedet for en liste af elementer...
     functions_liste_element * function = (get(array_of_custom_funcs, k)->element_liste);
     handleList(array_of_funcs, array_of_custom_funcs, stck, function, 0, BIGNUM);
 
@@ -332,7 +330,7 @@ void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_fu
             }
 
             else if (fptr == &custom){
-                fptr(array_of_funcs, array_of_custom_funcs, stck,list[i].s, &i);
+                fptr(array_of_funcs, array_of_custom_funcs, stck, list[i].s, &i);
             }
 
             else if (fptr == &ifelse){
@@ -344,6 +342,10 @@ void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_fu
 
             else if (fptr == &i_counter){
                 i_counter(stck);
+            }
+
+            else if (fptr == &variable){
+                variable(array_of_funcs, array_of_custom_funcs, list, &i);
             }
 
             else if (fptr != NULL){
@@ -428,44 +430,63 @@ void define(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs,
     put_elements(array_of_custom_funcs, list[first_idx-1].s, ny_list, type_functions_liste_element);
     put_func(array_of_funcs, list[first_idx-1].s, &custom, type_func); 
 }   
+void variable(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int * i){
+    *i += 1; // variable keyword
+
+    functions_liste_element * ny_list = malloc(sizeof(functions_liste_element)*MAXSIZE_STACK);
+    ny_list[0].type = type_int;
+    ny_list[0].val = 0;
+
+    ny_list[1].type = stop;
+
+    put_elements(array_of_custom_funcs, list[*i].s, ny_list, type_functions_liste_element);
+    put_func(array_of_funcs, list[*i].s, &custom, type_func); 
+
+}
+
+
+void create_basic_funcs(Interpretor * interpretor){
+    put(interpretor->array_of_funcs, "*", init_value_func(&mult), type_func); 
+    put(interpretor->array_of_funcs, "/", init_value_func(&divid), type_func);
+    put(interpretor->array_of_funcs, "+", init_value_func(&add), type_func);
+    put(interpretor->array_of_funcs, "-", init_value_func(&sub), type_func);
+    put(interpretor->array_of_funcs, "mod", init_value_func(&mod),type_func );
+    put(interpretor->array_of_funcs, "=", init_value_func(&equals),type_func );
+    put(interpretor->array_of_funcs, ">", init_value_func(&less),type_func );
+    put(interpretor->array_of_funcs, "<", init_value_func(&more),type_func );
+    put(interpretor->array_of_funcs, "and", init_value_func(&AND),type_func );
+    put(interpretor->array_of_funcs, "or", init_value_func(&OR),type_func );
+    put(interpretor->array_of_funcs, "invert", init_value_func(&INVERT),type_func );
+    put(interpretor->array_of_funcs, ".", init_value_func(&print),type_func);
+    put(interpretor->array_of_funcs, "emit", init_value_func(&EMIT),type_func );
+    put(interpretor->array_of_funcs, "cr", init_value_func(&CR), type_func); 
+    put(interpretor->array_of_funcs, "dup", init_value_func(&dup),type_func);
+    put(interpretor->array_of_funcs, "drop", init_value_func(&drop),type_func);
+    put(interpretor->array_of_funcs, "swap", init_value_func(&swap),type_func);
+    put(interpretor->array_of_funcs, "over", init_value_func(&over),type_func);
+    put(interpretor->array_of_funcs, "rot", init_value_func(&rotate),type_func);
+    put(interpretor->array_of_funcs, ":", init_value_func(&define), type_func);
+    put(interpretor->array_of_funcs, ".\"", init_value_func(&printString),type_func);
+    put(interpretor->array_of_funcs, "if", init_value_func(&ifelse),type_func);
+    put(interpretor->array_of_funcs, "do", init_value_func(&loop),type_func);
+    put(interpretor->array_of_funcs, "i", init_value_func(&i_counter),type_func);
+    put(interpretor->array_of_funcs, "variable", init_value_func(&variable),type_func);
+    
+}
+
 
 int main(void){
-    HashMapArray * array_of_funcs = init_hashMapArray(type_func, 100);
-    HashMapArray * array_of_custom_funcs = init_hashMapArray(type_functions_liste_element, 100);
-    Stack * stack = init_stack();
+    // Indeholder hashmap til basic funcs, hashmap til custom funcs og stacken
+    Interpretor * interpretor = init_interpretor();
 
     // definer basic functions
+    create_basic_funcs(interpretor);
 
-    put(array_of_funcs, "*", init_value_func(&mult), type_func); 
-    put(array_of_funcs, "/", init_value_func(&divid), type_func);
-    put(array_of_funcs, "+", init_value_func(&add), type_func);
-    put(array_of_funcs, "-", init_value_func(&sub), type_func);
-    put(array_of_funcs, "mod", init_value_func(&mod),type_func );
-    put(array_of_funcs, "=", init_value_func(&equals),type_func );
-    put(array_of_funcs, ">", init_value_func(&less),type_func );
-    put(array_of_funcs, "<", init_value_func(&more),type_func );
-    put(array_of_funcs, "and", init_value_func(&AND),type_func );
-    put(array_of_funcs, "or", init_value_func(&OR),type_func );
-    put(array_of_funcs, "invert", init_value_func(&INVERT),type_func );
-    put(array_of_funcs, ".", init_value_func(&print),type_func);
-    put(array_of_funcs, "emit", init_value_func(&EMIT),type_func );
-    put(array_of_funcs, "cr", init_value_func(&CR), type_func); 
-    put(array_of_funcs, "dup", init_value_func(&dup),type_func);
-    put(array_of_funcs, "drop", init_value_func(&drop),type_func);
-    put(array_of_funcs, "swap", init_value_func(&swap),type_func);
-    put(array_of_funcs, "over", init_value_func(&over),type_func);
-    put(array_of_funcs, "rot", init_value_func(&rotate),type_func);
-    put(array_of_funcs, ":", init_value_func(&define), type_func);
-    put(array_of_funcs, ".\"", init_value_func(&printString),type_func);
-    put(array_of_funcs, "if", init_value_func(&ifelse),type_func);
-    put(array_of_funcs, "do", init_value_func(&loop),type_func);
-    put(array_of_funcs, "i", init_value_func(&i_counter),type_func);
-    
-    char c[MAXSIZE_STACK]; // holder nuværende input fra brugeren
+    char c[MAXSIZE_CHAR]; // holder nuværende input fra brugeren
     int str_length;
 
     while (true){
-        fgets(c, MAXSIZE_STACK, stdin);
+        fgets(c, MAXSIZE_CHAR, stdin);
         str_length = strlen(c);
 
         if (strcmp(c, "quit") == 0){ // quit-funktion
@@ -478,12 +499,12 @@ int main(void){
             c[str_length+1] = '\000';
         }
 
-       
         // deler strengen i digits og strings
         functions_liste_element * list = splitString(c);
+
         // kører respektive funktioner
-        handleList(array_of_funcs, array_of_custom_funcs, stack, list, 0, BIGNUM);
-        printStack(stack);
+        handleList(interpretor->array_of_funcs, interpretor->array_of_custom_funcs, interpretor->stack, list, 0, BIGNUM);
+        printStack(interpretor->stack);
     }
 
     return 1;
