@@ -9,6 +9,7 @@ typedef struct functions_liste_element{
     int type;
     int val;
     char s[200];
+    int * pointer;
 }functions_liste_element;
 typedef struct element{
     char * key;
@@ -19,6 +20,7 @@ union value{
     char * s;
     void (*fptr)();
     functions_liste_element * element_liste;
+    int * pointer_to_int;
 
 } value;
 
@@ -26,7 +28,8 @@ enum type_of_value{
         type_int,
         type_str,
         type_func,
-        type_functions_liste_element
+        type_functions_liste_element,
+        pointer_to_int
 };
 
 typedef struct{
@@ -39,6 +42,12 @@ typedef struct{
 union value * init_value_func(void(*fptr)()){
     union value * ny_v = (union value * ) malloc(sizeof(ny_v));
     ny_v->fptr = fptr;
+    return ny_v;
+}
+
+union value * init_value_pointer(int * pointer){
+    union value * ny_v = (union value *) malloc(sizeof(value));
+    ny_v->pointer_to_int = pointer;
     return ny_v;
 }
 
@@ -79,6 +88,7 @@ void put(HashMapArray * hashmaparray, char k[], union value *val, int type){
     hashmaparray->list[hashmaparray->listEnd] = *ny_elm;
     hashmaparray->listEnd += 1;
 }   
+
 // liste af elementer
 void put_elements(HashMapArray * hashmaparray, char k[], functions_liste_element e[], int type){
     union value * ny = (union value *)malloc(sizeof(union value));

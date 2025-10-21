@@ -40,6 +40,23 @@ void push(Stack * stck, int val){ // laver ny integer pointe
     stck->list[stck->stackEnd] = v;
 }
 
+int * peek(Stack * stck){
+    if (stck->stackEnd == -1){
+        return NULL;
+    }
+    int * p = stck->list[stck->stackEnd];
+    return p;
+}
+
+void push_existing(Stack * stck, int * val){
+    if (stck->stackEnd == STACKMAXSIZE-1){
+        printf("Stack is full");
+        return;
+    }
+    stck->stackEnd += 1;
+    stck->list[stck->stackEnd] = val;
+}
+
 void printStack(Stack * stck){
     printf("\n");
     for (int i = 0; i <= stck->stackEnd; i++){

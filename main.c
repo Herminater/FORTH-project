@@ -14,8 +14,12 @@ BUGS:
 TODO:
 Fikse så loop ikke har en global variabel 
 add variable med memory (Skulle være let siden stacken har int *)
+fikse så det bare er compileren der bliver sendt rundt istedet for alle de forskellige maps
+
+lige nu opfører en variable sig som et defineret ord og retunerer værdien ved bare at skrive navnet
 
 IN THE WORKS:
+
 
 */
 #define MAXSIZE_CHAR 200
@@ -26,7 +30,8 @@ IN THE WORKS:
 enum type_of_element{
     string, 
     digit, 
-    stop
+    stop,
+    pointer
 };
 
 int loop_counter; // loop-counter til loops
@@ -219,10 +224,20 @@ void rotate(Stack * stck){ // roterer øverste tre værdier
         printf("Not enough items in stack");
     }
 };
+void store(Stack * stck){
+    int * adress = peek(stck);
+    pop(stck); // remove adress;
+    int value = pop(stck);
+    *adress = value;
+    return;
+}
+
 // prototyper
 void define(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int *i);
-void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int start, int last);
-void variable(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int * i);
+void handleList(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int start, int last);
+void variable(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int * i);
+void custom_variable(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, char k[], int * i);
+
 // mere kompliserede funktioner
 void printString(functions_liste_element list[], int * i){ 
 
@@ -255,7 +270,7 @@ int find_subString(functions_liste_element list[], char st[], int start){ // fin
     }
     return -1;
 }
-void loop(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
+void loop(HashMapArray * variable_store,HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
     *i += 1; // hop over do
     int loop = find_subString(list, "loop", *i);
     int start = pop(stck);
@@ -263,12 +278,12 @@ void loop(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, S
 
     loop_counter = start; 
     for (int k=start;k<end;k++){
-        handleList(array_of_funcs, array_of_custom_funcs, stck, list, *i, loop);
+        handleList(variable_store,array_of_funcs, array_of_custom_funcs, stck, list, *i, loop);
         loop_counter++;
     }
     *i = loop;
 }
-void ifelse(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
+void ifelse(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
     *i += 1;
 
     int p = pop(stck);
@@ -286,29 +301,30 @@ void ifelse(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs,
 
     if (!condition){ // hvis condition ikke er true skal der kun gøres noget hvis der er en else
         if (idx_else != -1){
-            handleList(array_of_funcs, array_of_custom_funcs, stck, list, idx_else+1, idx_then);
+            handleList(variable_store, array_of_funcs, array_of_custom_funcs, stck, list, idx_else+1, idx_then);
         }
     }else{
         if (idx_else != -1){
-            handleList(array_of_funcs, array_of_custom_funcs, stck, list, *i, idx_else);
+            handleList(variable_store,array_of_funcs, array_of_custom_funcs, stck, list, *i, idx_else);
         }
         else{
-            handleList(array_of_funcs, array_of_custom_funcs, stck, list, *i, idx_then);
+            handleList(variable_store,array_of_funcs, array_of_custom_funcs, stck, list, *i, idx_then);
         }
     }
     *i = idx_then;// skip then
 }
-void custom(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, char k[], int * i){ // kører en custom funktion fra string_map og map
+void custom(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, char k[], int * i){ // kører en custom funktion fra string_map og map
 
     int curr_idx = *i; // vi vil ikke ændre i
 
     // FEJLEN LIGGER HER, da funtionen bliver et enkelt element istedet for en liste af elementer...
     functions_liste_element * function = (get(array_of_custom_funcs, k)->element_liste);
-    handleList(array_of_funcs, array_of_custom_funcs, stck, function, 0, BIGNUM);
+    handleList(variable_store ,array_of_funcs, array_of_custom_funcs, stck, function, 0, BIGNUM);
 
     *i = curr_idx;
 }
-void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element list[], int first, int last){
+
+void handleList(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, functions_liste_element * list, int first, int last){
     void (*fptr)();
     int i=first;
 
@@ -318,6 +334,9 @@ void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_fu
             push(stck, list[i].val);
         }
         // vi har en funktion
+        else if (list[i].type == pointer_to_int){
+            push_existing(stck, list[i].pointer);
+        }
         else{
             fptr = (get(array_of_funcs, list[i].s)->fptr);
             
@@ -345,7 +364,11 @@ void handleList(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_fu
             }
 
             else if (fptr == &variable){
-                variable(array_of_funcs, array_of_custom_funcs, list, &i);
+                variable(variable_store, array_of_funcs, array_of_custom_funcs, list, &i);
+            }
+
+            else if (fptr == &custom_variable){
+                custom_variable(variable_store, array_of_funcs, array_of_custom_funcs, stck, list[i].s, &i);
             }
 
             else if (fptr != NULL){
@@ -430,19 +453,31 @@ void define(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs,
     put_elements(array_of_custom_funcs, list[first_idx-1].s, ny_list, type_functions_liste_element);
     put_func(array_of_funcs, list[first_idx-1].s, &custom, type_func); 
 }   
-void variable(HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int * i){
+
+void custom_variable(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, Stack * stck, char k[], int * i){
+    int curr_idx = *i;
+    functions_liste_element * function = (get(variable_store, k)->element_liste);
+    handleList(variable_store ,array_of_funcs, array_of_custom_funcs, stck, function, 0, BIGNUM);
+    *i = curr_idx;
+}
+
+void variable(HashMapArray * variable_store, HashMapArray * array_of_funcs, HashMapArray * array_of_custom_funcs, functions_liste_element list[], int * i){
     *i += 1; // variable keyword
 
+    int * temp = (int*)malloc(sizeof(int));
+    *temp = 1001;
+    // den gemte værdi skal gøres til en pointer, så den opdateres også når man opdaterer direkte fra
     functions_liste_element * ny_list = malloc(sizeof(functions_liste_element)*MAXSIZE_STACK);
-    ny_list[0].type = type_int;
-    ny_list[0].val = 0;
-
+    ny_list[0].type = pointer_to_int;
+    ny_list[0].pointer = temp;
     ny_list[1].type = stop;
 
-    put_elements(array_of_custom_funcs, list[*i].s, ny_list, type_functions_liste_element);
-    put_func(array_of_funcs, list[*i].s, &custom, type_func); 
+    put_elements(variable_store, list[*i].s, ny_list, pointer_to_int);
+    put_func(array_of_funcs, list[*i].s, &custom_variable, type_func); 
 
 }
+
+
 
 
 void create_basic_funcs(Interpretor * interpretor){
@@ -471,7 +506,9 @@ void create_basic_funcs(Interpretor * interpretor){
     put(interpretor->array_of_funcs, "do", init_value_func(&loop),type_func);
     put(interpretor->array_of_funcs, "i", init_value_func(&i_counter),type_func);
     put(interpretor->array_of_funcs, "variable", init_value_func(&variable),type_func);
-    
+    put(interpretor->array_of_funcs, "!", init_value_func(&store), type_func);
+    put(interpretor->array_of_funcs, "@", init_value_func(&store), type_func);
+
 }
 
 
@@ -503,7 +540,7 @@ int main(void){
         functions_liste_element * list = splitString(c);
 
         // kører respektive funktioner
-        handleList(interpretor->array_of_funcs, interpretor->array_of_custom_funcs, interpretor->stack, list, 0, BIGNUM);
+        handleList(interpretor->variable_store, interpretor->array_of_funcs, interpretor->array_of_custom_funcs, interpretor->stack, list, 0, BIGNUM);
         printStack(interpretor->stack);
     }
 
