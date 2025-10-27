@@ -11,6 +11,7 @@ typedef struct functions_liste_element{
     char s[200];
     int * pointer;
 }functions_liste_element;
+
 typedef struct element{
     char * key;
     union value * val;
@@ -111,7 +112,8 @@ union value * get(HashMapArray * hashmaparray, char k[]){
             return v->val;
         }
     }
-    printf("Value not found");
+    // printf("Value not found");
+    
     return NULL;
 }
 
