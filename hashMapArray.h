@@ -5,18 +5,19 @@
 
 // generic array med put og get function
 
-typedef struct functions_liste_element{
+typedef struct functions_liste_element{ // used in handle list argument 
     int type;
     int val;
     char s[200];
     int * pointer;
 }functions_liste_element;
 
-typedef struct element{
+typedef struct element{ // used to store different types of functions in fx define
     char * key;
     union value * val;
 } element;
-union value{
+
+union value{    // used to make funcs generic
     int i;
     char * s;
     void (*fptr)();
@@ -24,7 +25,6 @@ union value{
     int * pointer_to_int;
 
 } value;
-
 enum type_of_value{
         type_int,
         type_str,
@@ -116,6 +116,7 @@ union value * get(HashMapArray * hashmaparray, char k[]){
     
     return NULL;
 }
+
 
 // void dummy1(){};
 // void dummy2(){};

@@ -3,21 +3,8 @@
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
+#include "interpretor.h"
 
-
-/*
-BUGS:
-
-TODO:
-Fikse så loop ikke har en global variabel 
-
-lige nu opfører en variable sig som et defineret ord og retunerer værdien ved bare at skrive navnet.
-Den siger at den gemmer på memory adress 1000 og derfor starter med dette tal, men hvordan gøres det i c? 
-
-IN THE WORKS:
-
-
-*/
 #define MAXSIZE_CHAR 200
 #define MAXSIZE_STACK 200
 #define BIGNUM 5000
@@ -29,10 +16,6 @@ enum type_of_element{
     stop,
     pointer
 };
-
-int loop_counter; // loop-counter til loops
-
-// setup
 
 void mult(Stack * stck){ // popper 2 værdier fra stacken og pusher produktet
     if (stck->stackEnd > 0){
@@ -231,13 +214,23 @@ void show(Stack * stck){
     push(stck, *adress);
 
 }
-// prototyper
-void define(HashMapArray * default_func_store, HashMapArray * custom_func_store, functions_liste_element list[], int *i);
-void handleList(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, functions_liste_element list[], int start, int last);
-void variable(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, functions_liste_element list[], int * i);
-void custom_variable(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, char k[], int * i);
+void clear(Stack * stck){
+    while (!is_empty(stck)){
+        pop(stck);
+    }
+}
 
-// mere kompliserede funktioner
+void quit(Stack * stck){
+    exit(1);
+}
+
+// prototyper
+void define(Interpretor * interpretor, functions_liste_element list[], int *i);
+void handleList(Interpretor * interpretor, functions_liste_element list[], int start, int last);
+void variable(Interpretor * interpretor, functions_liste_element list[], int * i);
+void custom_variable(Interpretor * interpretor, char k[], int * i);
+
+// mere kompliserede funktioner 
 void printString(functions_liste_element list[], int * i){ 
 
     *i += 1; // skip ."
@@ -261,8 +254,11 @@ void printString(functions_liste_element list[], int * i){
         }
         
     }
-void i_counter(Stack * stck){ // adressen bruges bare til at parse korrekt funktion.
-    push(stck, loop_counter);
+void i_counter(Interpretor * interpretor){ // adressen bruges bare til at parse korrekt funktion.
+    Stack * stck = interpretor->stack;
+    Stack * iterator_stack = interpretor->iterator_stack;
+
+    push(stck, *(peek(iterator_stack)));
 }
 int find_subString(functions_liste_element list[], char st[], int start){ // finder substring og retunerer første index, hvis substring ikke findes retuneres -1
     int j = 0; 
@@ -274,20 +270,31 @@ int find_subString(functions_liste_element list[], char st[], int start){ // fin
     }
     return -1;
 }
-void loop(HashMapArray * variable_store,HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, functions_liste_element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
+void loop(Interpretor * interpretor, functions_liste_element list[], int * i){ // loop-funktion. Tager en streng og kører funktionen efter do og før loop n gange
+    HashMapArray * variable_store = interpretor->variable_store;
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    Stack * stck = interpretor->stack;
+    Stack * iterator_stack = interpretor->iterator_stack;
+    
     *i += 1; // hop over do
     int loop = find_subString(list, "loop", *i);
     int start = pop(stck);
     int end = pop(stck);
 
-    loop_counter = start; 
+    push(iterator_stack, start);
     for (int k=start;k<end;k++){
-        handleList(variable_store,default_func_store, custom_func_store, stck, list, *i, loop);
-        loop_counter++;
+        handleList(interpretor, list, *i, loop);
+        push(iterator_stack, pop(iterator_stack)+1);
     }
+    pop(iterator_stack);
     *i = loop;
 }
-void ifelse(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, functions_liste_element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
+void ifelse(Interpretor * interpretor, functions_liste_element list[], int * i){ // conditional funktion. Tager fra første char efter if. 
+    HashMapArray * variable_store = interpretor->variable_store;
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    HashMapArray * custom_func_store = interpretor->custom_func_store;
+    Stack * stck = interpretor->stack;
+    
     *i += 1;
 
     int p = pop(stck);
@@ -305,31 +312,36 @@ void ifelse(HashMapArray * variable_store, HashMapArray * default_func_store, Ha
 
     if (!condition){ // hvis condition ikke er true skal der kun gøres noget hvis der er en else
         if (idx_else != -1){
-            handleList(variable_store, default_func_store, custom_func_store, stck, list, idx_else+1, idx_then);
+            handleList(interpretor, list, idx_else+1, idx_then);
         }
     }else{
         if (idx_else != -1){
-            handleList(variable_store,default_func_store, custom_func_store, stck, list, *i, idx_else);
+            handleList(interpretor, list, *i, idx_else);
         }
         else{
-            handleList(variable_store,default_func_store, custom_func_store, stck, list, *i, idx_then);
+            handleList(interpretor, list, *i, idx_then);
         }
     }
     *i = idx_then;// skip then
 }
-void custom(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, char k[], int * i){ // kører en custom funktion fra string_map og map
+void custom(Interpretor * interpretor, char k[], int * i){ // kører en custom funktion fra string_map og map
+    HashMapArray * variable_store = interpretor->variable_store;
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    HashMapArray * custom_func_store = interpretor->custom_func_store;
+    Stack * stck = interpretor->stack;
 
     int curr_idx = *i; // vi vil ikke ændre i
 
-    // FEJLEN LIGGER HER, da funtionen bliver et enkelt element istedet for en liste af elementer...
     functions_liste_element * function = (get(custom_func_store, k)->element_liste);
-    handleList(variable_store ,default_func_store, custom_func_store, stck, function, 0, BIGNUM);
+    handleList(interpretor, function, 0, BIGNUM);
 
     *i = curr_idx;
 }
-void handleList(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, functions_liste_element * list, int first, int last){
-    
-    
+void handleList (Interpretor * interpretor, functions_liste_element * list, int first, int last){
+    HashMapArray * variable_store = interpretor->variable_store;
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    HashMapArray * custom_func_store = interpretor->custom_func_store;
+    Stack * stck = interpretor->stack;
     
     void (*fptr)();
     int i=first;
@@ -359,7 +371,7 @@ void handleList(HashMapArray * variable_store, HashMapArray * default_func_store
             }
             
             else if (fptr == &define){
-                fptr(default_func_store, custom_func_store, list, &i); // we need to define a function and update indexes after
+                fptr(interpretor, list, &i); // we need to define a function and update indexes after
             }
 
             else if (fptr == &printString){
@@ -367,26 +379,26 @@ void handleList(HashMapArray * variable_store, HashMapArray * default_func_store
             }
 
             else if (fptr == &custom){
-                fptr(variable_store, default_func_store, custom_func_store, stck, list[i].s, &i);
+                fptr(interpretor, list[i].s, &i);
             }
 
             else if (fptr == &ifelse){
-                fptr(variable_store, default_func_store, custom_func_store, stck, list, &i);
+                fptr(interpretor, list, &i);
             }
             else if (fptr == &loop){
-                fptr(variable_store, default_func_store, custom_func_store, stck, list, &i);
+                fptr(interpretor, list, &i);
             }
 
             else if (fptr == &i_counter){
-                i_counter(stck);
+                i_counter(interpretor);
             }
 
             else if (fptr == &variable){
-                variable(variable_store, default_func_store, custom_func_store, list, &i);
+                variable(interpretor, list, &i);
             }
 
             else if (fptr == &custom_variable){
-                custom_variable(variable_store, default_func_store, custom_func_store, stck, list[i].s, &i);
+                custom_variable(interpretor, list[i].s, &i);
             }
 
             else if (fptr != NULL){
@@ -412,7 +424,7 @@ functions_liste_element * splitString(char c[]){
     int function_counter = 0;
 
     functions_liste_element * list = malloc(sizeof(functions_liste_element)*MAXSIZE_STACK);
-
+       
     for (; right<strlen(c); right++){ // kør så længe der er char i strengen
         if (c[right] == ' '){ // hvis et mellemrum findes
             if (isdigit(c[left]) != 0){ // og det er et digit
@@ -438,8 +450,10 @@ functions_liste_element * splitString(char c[]){
 
     return list;
 }
-void define(HashMapArray * default_func_store, HashMapArray * custom_func_store, functions_liste_element list[], int * i){ // definerer en ny custom funktion
-    
+void define(Interpretor * interpretor, functions_liste_element list[], int * i){ // definerer en ny custom funktion
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    HashMapArray * custom_func_store = interpretor->custom_func_store;
+
     functions_liste_element * ny_list = malloc(sizeof(functions_liste_element)*MAXSIZE_STACK);
 
     // first one is the key;
@@ -471,13 +485,22 @@ void define(HashMapArray * default_func_store, HashMapArray * custom_func_store,
     put_elements(custom_func_store, list[first_idx-1].s, ny_list, type_functions_liste_element);
     put_func(default_func_store, list[first_idx-1].s, &custom, type_func); 
 }   
-void custom_variable(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, Stack * stck, char k[], int * i){
+void custom_variable(Interpretor * interpretor, char k[], int * i){
+    HashMapArray * variable_store = interpretor->variable_store;
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    HashMapArray * custom_func_store = interpretor->custom_func_store;
+    Stack * stck = interpretor->stack;
+    
     int curr_idx = *i;
     functions_liste_element * function = (get(variable_store, k)->element_liste);
-    handleList(variable_store ,default_func_store, custom_func_store, stck, function, 0, BIGNUM);
+    handleList(interpretor, function, 0, BIGNUM);
     *i = curr_idx;
 }
-void variable(HashMapArray * variable_store, HashMapArray * default_func_store, HashMapArray * custom_func_store, functions_liste_element list[], int * i){
+void variable(Interpretor * interpretor, functions_liste_element list[], int * i){
+    HashMapArray * variable_store = interpretor->variable_store;
+    HashMapArray * default_func_store = interpretor->default_func_store;
+    HashMapArray * custom_func_store = interpretor->custom_func_store;
+    
     *i += 1; // variable keyword
 
     int * temp = (int*)malloc(sizeof(int));
@@ -492,3 +515,36 @@ void variable(HashMapArray * variable_store, HashMapArray * default_func_store, 
     put_func(default_func_store, list[*i].s, &custom_variable, type_func); 
 
 }
+void create_basic_funcs(Interpretor * interpretor){
+    put(interpretor->default_func_store, "/", init_value_func(&divid), type_func);
+    put(interpretor->default_func_store, "*", init_value_func(&mult), type_func); 
+    put(interpretor->default_func_store, "+", init_value_func(&add), type_func);
+    put(interpretor->default_func_store, "-", init_value_func(&sub), type_func);
+    put(interpretor->default_func_store, "mod", init_value_func(&mod),type_func );
+    put(interpretor->default_func_store, "=", init_value_func(&equals),type_func );
+    put(interpretor->default_func_store, ">", init_value_func(&less),type_func );
+    put(interpretor->default_func_store, "<", init_value_func(&more),type_func );
+    put(interpretor->default_func_store, "and", init_value_func(&AND),type_func );
+    put(interpretor->default_func_store, "or", init_value_func(&OR),type_func );
+    put(interpretor->default_func_store, "invert", init_value_func(&INVERT),type_func );
+    put(interpretor->default_func_store, ".", init_value_func(&print),type_func);
+    put(interpretor->default_func_store, "emit", init_value_func(&EMIT),type_func );
+    put(interpretor->default_func_store, "cr", init_value_func(&CR), type_func); 
+    put(interpretor->default_func_store, "dup", init_value_func(&dup),type_func);
+    put(interpretor->default_func_store, "drop", init_value_func(&drop),type_func);
+    put(interpretor->default_func_store, "swap", init_value_func(&swap),type_func);
+    put(interpretor->default_func_store, "over", init_value_func(&over),type_func);
+    put(interpretor->default_func_store, "rot", init_value_func(&rotate),type_func);
+    put(interpretor->default_func_store, ":", init_value_func(&define), type_func);
+    put(interpretor->default_func_store, ".\"", init_value_func(&printString),type_func);
+    put(interpretor->default_func_store, "if", init_value_func(&ifelse),type_func);
+    put(interpretor->default_func_store, "do", init_value_func(&loop),type_func);
+    put(interpretor->default_func_store, "i", init_value_func(&i_counter),type_func);
+    put(interpretor->default_func_store, "variable", init_value_func(&variable),type_func);
+    put(interpretor->default_func_store, "!", init_value_func(&store), type_func);
+    put(interpretor->default_func_store, "@", init_value_func(&show), type_func);
+    put(interpretor->default_func_store, "clear", init_value_func(&clear), type_func);
+    put(interpretor->default_func_store, "quit", init_value_func(&clear), type_func);
+
+}
+
